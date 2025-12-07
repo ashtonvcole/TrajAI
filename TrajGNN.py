@@ -54,7 +54,7 @@ class GraphLayer(pyg.nn.MessagePassing):
         Outputs:
             None
         """
-        self.edge_updater = MLP(2 * dim_node + dim_edge, hidden_size, layers #### FIX THISW
+        self.edge_updater = MLP(2 * dim_node + dim_edge, hidden_size, layers) #### FIX THISW
         self.node_updater = MLP(2 * dim_node * 2, hidden_size, layers) #### FIX THIS
 
     def message(self, node_a: int, node_b, edge_ab):
