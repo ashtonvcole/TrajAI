@@ -1,7 +1,7 @@
 class RectNN(nn.Module):
     """A sequential MLP with a fixed width for all hidden layers."""
 
-    def __init__(self, input_dim: int, output_dim: int, width: int, depth: int, activation_type=nn.Tanh) -> NoneType:
+    def __init__(self, input_dim: int, output_dim: int, width: int, depth: int, activation_type=nn.Tanh) -> None:
         """Constructor for a RectNN.
     
         Arguments:
