@@ -1,49 +1,63 @@
-# Master GNN class
-# Has encoder (sequential), processor (gn), decoder (sequential)
-# Apply inductive bias appropriately? or in notebook?
-# GN processor class too
-# Update which does message passing M times
-# Loss functions
-# Approximators for different inductive biases
-
-
-
 import mlp
 import torch
 import torch_geometric as pyg
 import torch.nn as nn
 
-class GNN(nn.Module):
+class GraphNeuralNetwork(nn.Module):
     """Graph Neural Network with encoder, processor, and decoder."""
     
-    def __init__(self, encoder: nn.Module, processor: GN, decoder: nn.Module):
-        """Constructor for a GNN.
+    def __init__(self, relater: nn.Module, encoder_node: nn.Module, encoder_edge: nn.Module, processor: nn.Module, decoder: nn.Module):
+        """Constructor for a Graph Neural Network.
 
         Arguments:
-            encoder (nn.Module): An appropriate Pytorch module encoding inputs into the latent graph space.
-            processor (GN): A graph network applying message passing in the latent graph space.
-            decoder (nn.Module): An appropriate Pytorch module decoding the processed graph into the output space.
+            relater (nn.Module): An appropriate Pytorch module defining a directed relationship between two particles as a function of their states. This may or may not have symmetry or anti-symmetry, e.g., distance, displacement, etc.
+            encoder_node (nn.Module): An appropriate Pytorch module encoding particle states into the latent graph space as graph nodes. The output dimension should be dim_node. 
+            encoder_edge (nn.Module): An appropriate Pytorch module encoding particle relationships into multidimensional edge weights. The output dimension should be dim_edge.
+            processor (nn.Module): A n appropriate Pytorch module applying message passing in the latent graph space, e.g. a GraphNetwork object.
+            decoder (nn.Module): An appropriate Pytorch module decoding the processed graph into the output space. The input dimension should be dim_node.
 
         Returns:
             None
         """
-        supet().__init__()
-        self.encoder = encoder
+        super(GraphNeuralNetwork, self).__init__()
+        self.relater = relater
+        self.encoder_node = encoder_node
+        self.encoder_edge = encoder_edge
         self.processor = processor
         self.decoder = decoder
 
-    def forward():
+    def forward(self, x: torch.Tensor, connectivity: torch.Tensor = None):
         """Apply the Graph Neural Network to a batch of data.
         Arguments:
-            ???
+            x (torch.Tensor): A batch of particle states composing the global state of the system, of dimension (num_particles, dim_particle_state).
+            connectivity (torch.Tensor) = None: Which particles are considered to influence each other. This influence is one-way. The tensor has dimension (2, num_edges), where the first particle influences the second particle.
 
         Returns:
-            ???
+            torch.Tensor: 
         """
+        # Get numer of particles from dimension
+        num_particles = x.shape[0]
+        # If connectivity is None, assume that the graph is fully connected
+        if connectivity is None:
+            # Build connectivity where every node is connected to every node
+            # repeat_interleave: [1, 2, 3] -> [1, 1, 1, 2, 2, 2, 3, 3, 3]
+            nodes_source = torch.arange(num_particles, device=x.device).repeat_interleave(num_particles)
+            # repeat: [1, 2, 3] -> [1, 2, 3, 1, 2, 3, 1, 2, 3]
+            nodes_target = torch.arange(num_particles, device=x.device).repeat(num_particles)
+            # Remove edges pointing to self, i.e. source = target
+            mask = nodes_source != nodes_target
+            # Combine these into one tensor
+            connectivity = torch.stack((nodes_source[mask], nodes_target[mask]), dim=0)
+        # Get particle-particle relationships
+        # Use connectivity to reference source and target nodes
+        r = self.relater(x[connectivity[0]], x[connectivity[1]])
         # Encode
+        V = self.encoder_node(x)
+        E = self.encoder_edge(r)
         # Message passing
+        V, E = self.processor(V, E, connectivity)
         # Decode
-        pass
+        return self.decoder(V)
 
 
 
