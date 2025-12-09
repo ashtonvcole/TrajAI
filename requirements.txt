@@ -11,7 +11,7 @@ fonttools @ file:///Users/runner/miniforge3/conda-bld/fonttools_1764352902967/wo
 frozenlist==1.8.0
 fsspec @ file:///home/conda/feedstock_root/build_artifacts/fsspec_1764784748144/work
 gmpy2 @ file:///Users/runner/miniforge3/conda-bld/gmpy2_1762946962655/work
--e git+ssh://git@github.com/ashtonvcole/TrajAI.git@a592cce762154f28f8203410f99be1989a93a548#egg=gns_tools
+-e git+ssh://git@github.com/ashtonvcole/TrajAI.git@1aaa7d1a333c79b8b8b8ebd9e10b086e55a55e79#egg=gns_tools
 idna==3.11
 Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_jinja2_1764517220/work
 kiwisolver @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_kiwisolver_1762488945/work

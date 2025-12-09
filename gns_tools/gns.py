@@ -23,7 +23,7 @@ class GraphNeuralSimulator(nn.Module):
         self.updater = updater
         self.connector = connector
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Apply the Graph Neural Simulator to a batch of data.
 
         This method acts as a state transition function. It is given a state and predicts the next state in a sequence.
