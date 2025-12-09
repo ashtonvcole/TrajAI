@@ -35,7 +35,7 @@ class GraphNeuralNetwork(nn.Module):
             connectivity (torch.Tensor, optional): Which particles are considered to influence each other. This influence is one-way. The tensor has dimension (2, num_edges), where the first particle influences the second particle.
 
         Returns:
-            torch.Tensor: 
+            torch.Tensor: The output of the Graph Neural Network.
         """
         # Get numer of particles from dimension
         num_particles = x.shape[0]
