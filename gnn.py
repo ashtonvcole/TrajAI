@@ -29,6 +29,7 @@ class GraphNeuralNetwork(nn.Module):
 
     def forward(self, x: torch.Tensor, connectivity: torch.Tensor = None):
         """Apply the Graph Neural Network to a batch of data.
+        
         Arguments:
             x (torch.Tensor): A batch of particle states composing the global state of the system, of dimension (num_particles, dim_particle_state).
             connectivity (torch.Tensor, optional): Which particles are considered to influence each other. This influence is one-way. The tensor has dimension (2, num_edges), where the first particle influences the second particle.
