@@ -1,7 +1,8 @@
 import mlp
 import torch
-import torch_geometric as pyg
 import torch.nn as nn
+import torch_geometric as pyg
+import torch_geometric.data as pyg_data
 
 class GraphNeuralNetwork(nn.Module):
     """Graph Neural Network with encoder, processor, and decoder."""
@@ -30,7 +31,7 @@ class GraphNeuralNetwork(nn.Module):
         """Apply the Graph Neural Network to a batch of data.
         Arguments:
             x (torch.Tensor): A batch of particle states composing the global state of the system, of dimension (num_particles, dim_particle_state).
-            connectivity (torch.Tensor) = None: Which particles are considered to influence each other. This influence is one-way. The tensor has dimension (2, num_edges), where the first particle influences the second particle.
+            connectivity (torch.Tensor, optional): Which particles are considered to influence each other. This influence is one-way. The tensor has dimension (2, num_edges), where the first particle influences the second particle.
 
         Returns:
             torch.Tensor: 
@@ -54,10 +55,16 @@ class GraphNeuralNetwork(nn.Module):
         # Encode
         V = self.encoder_node(x)
         E = self.encoder_edge(r)
+        # Construct data object (graph) from nodes, edges, and connectivity
+        graph = pyg_data.Data(
+            x=V,
+            edge_index=connectivity,
+            edge_attr=E
+        )
         # Message passing
-        V, E = self.processor(V, E, connectivity)
+        graph = self.processor(graph)
         # Decode
-        return self.decoder(V)
+        return self.decoder(graph.x)
 
 
 
@@ -83,24 +90,18 @@ class GraphNetwork(nn.Module):
         for i in range(num_layers):
             self.layers.append(GraphLayer(dim_node, dim_edge, mlp_width, mlp_depth))
 
-    def forward(self, nodes: torch.Tensor, edges: torch.Tensor, connectivity: torch.Tensor) -> tuple:
-        """Apply the Graph Network to a batch of data.
+    def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
+        """Apply the Graph Network to a graph.
 
         Arguments:
-            nodes (torch.Tensor): The initial nodes, with dimension (num_nodes, dim_node).
-            edges (torch.Tensor): The initial edges, with dimension (num_edges, dim_edge).
-            connectivity (torch.Tensor): A mapping from directed edges to nodes, with dimension (2, num_edges). For example, connectivity[1, 5] holds the second node index associated with edge 5.
+            graph (torch_geometric.data.Data): The initial graph, with nodes, edges, and connectivity.
 
         Returns:
-            (nodes_out, edges_out) (tuple)
-            nodes_out (torch.Tensor): The updated nodes, with dimension (num_nodes, dim_node).
-            edges_out (torch.Tensor): The updated edges, with dimension (num_edges, dim_edge).
+            torch_geometric.data.Data: The updated graph object.
         """
-        nodes_out = nodes
-        edges_out = edges
         for layer in self.layers:
-            nodes_out, edges_out = layer(nodes_out, edges_out, connectivity)
-        return nodes_out, edges_out
+            graph = layer(graph)
+        return graph
 
 
         
@@ -164,25 +165,28 @@ class GraphLayer(pyg.nn.MessagePassing):
         net_messages = torch_scatter.scatter(messages, indices, dim=self.node_dim, reduce="sum")
         return (messages, net_messages)
 
-    def forward(self, nodes: torch.Tensor, edges: torch.Tensor, connectivity: torch.Tensor) -> tuple:
+    def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
         """Apply the graph layer to a graph.
 
         Given a graph, represented by nodes, edge weights, and a connectivity mapping, the layer produces new nodes and edge weights through a process called message passing. Messages are created by feeding an edge's weights and its associated nodes into a MLP. This message is added to the existing edge weights. Nodes are updated by aggregating messages directed at a node, and feeding them and the node through a second MLP.
 
         Arguments:
-            nodes (torch.Tensor): The initial nodes, with dimension (num_nodes, dim_node).
-            edges (torch.Tensor): The initial edges, with dimension (num_edges, dim_edge).
-            connectivity (torch.Tensor): A mapping from directed edges to nodes, with dimension (2, num_edges). For example, connectivity[1, 5] holds the second node index associated with edge 5.
+            graph (torch_geometric.data.Data): The initial graph, with nodes, edges, and connectivity.
 
         Returns:
-            (nodes_out, edges_out) (tuple)
-            nodes_out (torch.Tensor): The updated nodes, with dimension (num_nodes, dim_node).
-            edges_out (torch.Tensor): The updated edges, with dimension (num_edges, dim_edge).
+            torch_geometric.data.Data: The updated graph object.
         """
+        # Extract nodes, edges, and connectivity for operations
+        nodes = graph.x
+        edges = graph.edge_attr
+        connectivity = graph.edge_index
         # Propagate calls message, aggregate, and update
         # delta_edge is the corresponding message.
         delta_edges, net_messages = self.propagate(connectivity, x=(nodes, nodes), edge_feature=edges)
         delta_nodes = self.node_updater(torch.cat((nodes, net_messages), dim=-1))
         edges_out = edges + delta_edges
         nodes_out = nodes + delta_nodes
-        return nodes_out, edges_out
+        # Update the same graph object
+        graph.x = nodes + delta_nodes
+        graph.edge_attr = edges + delta_edges
+        return graph
