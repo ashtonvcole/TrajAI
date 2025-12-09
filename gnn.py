@@ -14,7 +14,7 @@ class GraphNeuralNetwork(nn.Module):
             relater (nn.Module): An appropriate Pytorch module defining a directed relationship between two particles as a function of their states. This may or may not have symmetry or anti-symmetry, e.g., distance, displacement, etc.
             encoder_node (nn.Module): An appropriate Pytorch module encoding particle states into the latent graph space as graph nodes. The output dimension should be dim_node. 
             encoder_edge (nn.Module): An appropriate Pytorch module encoding particle relationships into multidimensional edge weights. The output dimension should be dim_edge.
-            processor (nn.Module): A n appropriate Pytorch module applying message passing in the latent graph space, e.g. a GraphNetwork object.
+            processor (nn.Module): An appropriate Pytorch module applying message passing in the latent graph space, e.g. a GraphNetwork object.
             decoder (nn.Module): An appropriate Pytorch module decoding the processed graph into the output space. The input dimension should be dim_node.
 
         Returns:
