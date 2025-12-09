@@ -106,16 +106,15 @@ class GraphNetwork(nn.Module):
 
         
 class GraphLayer(pyg.nn.MessagePassing):
-    """A message passing layer for a Graph Network."""
+    """A message passing layer with mlp.RectNN MLPs for a Graph Network."""
 
     def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth: int) -> None:
         """Constructor for a GraphLayer, which performs a single round of message passing.
-
         Arguments:
             dim_node (int): Dimension of nodes.
             dim_edge (int): Dimension edge weights.
-            mlp_width (int): Number of perceptrons per layer for the graph update MLPs.
-            mlp_depth (int): Number of layers for the graph update MLPs.
+            mlp_width (int): Number of perceptrons per layer for the mlp.RectNN graph update MLPs.
+            mlp_depth (int): Number of layers for the mlp.RectNN graph update MLPs.
 
         Returns:
             None
