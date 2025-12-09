@@ -33,21 +33,67 @@ class GNN(nn.Module):
         self.decoder = decoder
 
     def forward():
+        """Apply the Graph Neural Network to a batch of data.
+        Arguments:
+            ???
+
+        Returns:
+            ???
+        """
         # Encode
         # Message passing
         # Decode
         pass
 
-class GN(nn.Module):
+
+
+class GraphNetwork(nn.Module):
     """Graph Network, which performs message passing on a graph. Not to be confused with a Graph Neural Network (GNN)."""
 
-    def __init__(self):
-        return 0
+    def __init__(self, dim_node: int, dim_edge: int, num_layers: int, mlp_width: int, mlp_depth: int) -> None:
+        """Constructor for a GraphNetwork.
 
+        Arguments:
+            dim_node (int): Dimension of nodes.
+            dim_edge (int): Dimension edge weights.
+            num_layers (int): Number of message passing GraphLayers in the network.
+            mlp_width (int): Number of perceptrons per layer for the graph update MLPs.
+            mlp_depth (int): Number of layers for the graph update MLPs.
+
+        Returns:
+            None
+        """
+        super(GraphNetwork, self).__init__()
+        self.layers = nn.ModuleList()
+        self.num_layers = num_layers
+        for i in range(num_layers):
+            self.layers.append(GraphLayer(dim_node, dim_edge, mlp_width, mlp_depth))
+
+    def forward(self, nodes: torch.Tensor, edges: torch.Tensor, connectivity: torch.Tensor) -> tuple:
+        """Apply the Graph Network to a batch of data.
+
+        Arguments:
+            nodes (torch.Tensor): The initial nodes, with dimension (num_nodes, dim_node).
+            edges (torch.Tensor): The initial edges, with dimension (num_edges, dim_edge).
+            connectivity (torch.Tensor): A mapping from directed edges to nodes, with dimension (2, num_edges). For example, connectivity[1, 5] holds the second node index associated with edge 5.
+
+        Returns:
+            (nodes_out, edges_out) (tuple)
+            nodes_out (torch.Tensor): The updated nodes, with dimension (num_nodes, dim_node).
+            edges_out (torch.Tensor): The updated edges, with dimension (num_edges, dim_edge).
+        """
+        nodes_out = nodes
+        edges_out = edges
+        for layer in self.layers:
+            nodes_out, edges_out = layer(nodes_out, edges_out, connectivity)
+        return nodes_out, edges_out
+
+
+        
 class GraphLayer(pyg.nn.MessagePassing):
     """A message passing layer for a Graph Network."""
 
-    def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth) -> None:
+    def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth: int) -> None:
         """Constructor for a GraphLayer, which performs a single round of message passing.
 
         Arguments:
