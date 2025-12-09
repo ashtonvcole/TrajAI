@@ -5,3 +5,8 @@ __pycache__/
 *.log
 *.out
 *.synctex.gz
+*.MP4
+*.jpg
+*.png
+*.json
+venv/
