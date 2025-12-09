@@ -184,8 +184,6 @@ class GraphLayer(pyg.nn.MessagePassing):
         # delta_edge is the corresponding message.
         delta_edges, net_messages = self.propagate(connectivity, x=(nodes, nodes), edge_feature=edges)
         delta_nodes = self.node_updater(torch.cat((nodes, net_messages), dim=-1))
-        edges_out = edges + delta_edges
-        nodes_out = nodes + delta_nodes
         # Update the same graph object
         graph.x = nodes + delta_nodes
         graph.edge_attr = edges + delta_edges
