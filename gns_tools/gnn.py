@@ -1,4 +1,4 @@
-import mlp
+import .mlp
 import torch
 import torch.nn as nn
 import torch_geometric as pyg

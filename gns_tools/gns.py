@@ -1,4 +1,4 @@
-import gnn
+import .gnn
 import torch
 import torch.nn as nn
 
