@@ -72,7 +72,7 @@ class GraphNeuralNetwork(nn.Module):
 class GraphNetwork(nn.Module):
     """Graph Network, which performs message passing on a graph. Not to be confused with a Graph Neural Network (GNN)."""
 
-    def __init__(self, dim_node: int, dim_edge: int, num_layers: int, mlp_width: int, mlp_depth: int) -> None:
+    def __init__(self, dim_node: int, dim_edge: int, num_layers: int, mlp_width: int, mlp_depth: int, mlp_activation: nn.Module = nn.ReLU) -> None:
         """Constructor for a GraphNetwork.
 
         Arguments:
@@ -81,6 +81,7 @@ class GraphNetwork(nn.Module):
             num_layers (int): Number of message passing GraphLayers in the network.
             mlp_width (int): Number of perceptrons per layer for the graph update MLPs.
             mlp_depth (int): Number of layers for the graph update MLPs.
+            mlp_activation (nn.Module, optional): Activation function for the graph update MLPs. Default is nn.ReLU.
 
         Returns:
             None
@@ -89,7 +90,7 @@ class GraphNetwork(nn.Module):
         self.layers = nn.ModuleList()
         self.num_layers = num_layers
         for i in range(num_layers):
-            self.layers.append(GraphLayer(dim_node, dim_edge, mlp_width, mlp_depth))
+            self.layers.append(GraphLayer(dim_node, dim_edge, mlp_width, mlp_depth, mlp_activation))
 
     def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
         """Apply the Graph Network to a graph.
@@ -109,13 +110,14 @@ class GraphNetwork(nn.Module):
 class GraphLayer(pyg.nn.MessagePassing):
     """A message passing layer with mlp.RectNN MLPs for a Graph Network."""
 
-    def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth: int) -> None:
+    def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth: int, mlp_activation: nn.Module = nn.ReLU) -> None:
         """Constructor for a GraphLayer, which performs a single round of message passing.
         Arguments:
             dim_node (int): Dimension of nodes.
             dim_edge (int): Dimension edge weights.
             mlp_width (int): Number of perceptrons per layer for the mlp.RectNN graph update MLPs.
             mlp_depth (int): Number of layers for the mlp.RectNN graph update MLPs.
+            mlp_activation (nn.Module, optional): Activation function for the mlp.RectNN graph update MLPs. Default is nn.ReLU.
 
         Returns:
             None
@@ -125,13 +127,15 @@ class GraphLayer(pyg.nn.MessagePassing):
             2 * dim_node + dim_edge,
             dim_edge,
             mlp_width,
-            mlp_depth
+            mlp_depth,
+            mlp_activation
         )
         self.node_updater = mlp.RectNN(
             dim_node + dim_edge,
             dim_node,
             mlp_width, 
-            mlp_depth
+            mlp_depth,
+            mlp_activation
         )
 
     def message(self, node_a: torch.Tensor, node_b: torch.Tensor, edge_ab: torch.Tensor) -> torch.Tensor:
