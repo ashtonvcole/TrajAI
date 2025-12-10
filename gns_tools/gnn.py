@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch_geometric as pyg
 import torch_geometric.data as pyg_data
+import torch_scatter
 
 class GraphNeuralNetwork(nn.Module):
     """Graph Neural Network with encoder, processor, and decoder."""
@@ -123,6 +124,7 @@ class GraphLayer(pyg.nn.MessagePassing):
             None
         """
         super(GraphLayer, self).__init__()
+        self.node_dim = 0 # Expect 2D tensor, as list of node vectors
         self.edge_updater = mlp.RectNN(
             2 * dim_node + dim_edge,
             dim_edge,
