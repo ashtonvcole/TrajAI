@@ -4,7 +4,7 @@ import torch.nn as nn
 class RectNN(nn.Module):
     """A sequential MLP with a fixed width for all hidden layers."""
 
-    def __init__(self, input_dim: int, output_dim: int, width: int, depth: int, activation_type) -> None:
+    def __init__(self, input_dim: int, output_dim: int, width: int, depth: int, activation_type: nn.Module) -> None:
         """Constructor for a RectNN.
     
         Arguments:
@@ -12,7 +12,7 @@ class RectNN(nn.Module):
             output_dim (int): Dimension of output.
             width (int): Number of perceptrons per hidden layer.
             depth (int): Number of hidden layers.
-            activation_type (class): Type of activation function to be instantiated for each layer.
+            activation_type (nn.Module): Type of activation function to be instantiated for each layer.
     
         Returns:
             None
