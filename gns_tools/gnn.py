@@ -72,7 +72,7 @@ class GraphNeuralNetwork(nn.Module):
 class GraphNetwork(nn.Module):
     """Graph Network, which performs message passing on a graph. Not to be confused with a Graph Neural Network (GNN)."""
 
-    def __init__(self, dim_node: int, dim_edge: int, num_layers: int, mlp_width: int, mlp_depth: int, mlp_activation: nn.Module = nn.ReLU) -> None:
+    def __init__(self, dim_node: int, dim_edge: int, num_layers: int, mlp_width: int, mlp_depth: int, mlp_activation = nn.ReLU) -> None:
         """Constructor for a GraphNetwork.
 
         Arguments:
@@ -81,7 +81,7 @@ class GraphNetwork(nn.Module):
             num_layers (int): Number of message passing GraphLayers in the network.
             mlp_width (int): Number of perceptrons per layer for the graph update MLPs.
             mlp_depth (int): Number of layers for the graph update MLPs.
-            mlp_activation (nn.Module, optional): Activation function for the graph update MLPs. Default is nn.ReLU.
+            mlp_activation (nn.Module subtype, optional): Activation function type for the graph update MLPs. Default is nn.ReLU.
 
         Returns:
             None
@@ -110,14 +110,14 @@ class GraphNetwork(nn.Module):
 class GraphLayer(pyg.nn.MessagePassing):
     """A message passing layer with mlp.RectNN MLPs for a Graph Network."""
 
-    def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth: int, mlp_activation: nn.Module = nn.ReLU) -> None:
+    def __init__(self, dim_node: int, dim_edge: int, mlp_width: int, mlp_depth: int, mlp_activation = nn.ReLU) -> None:
         """Constructor for a GraphLayer, which performs a single round of message passing.
         Arguments:
             dim_node (int): Dimension of nodes.
             dim_edge (int): Dimension edge weights.
             mlp_width (int): Number of perceptrons per layer for the mlp.RectNN graph update MLPs.
             mlp_depth (int): Number of layers for the mlp.RectNN graph update MLPs.
-            mlp_activation (nn.Module, optional): Activation function for the mlp.RectNN graph update MLPs. Default is nn.ReLU.
+            mlp_activation (nn.Module subtype, optional): Activation function type for the mlp.RectNN graph update MLPs. Default is nn.ReLU.
 
         Returns:
             None
