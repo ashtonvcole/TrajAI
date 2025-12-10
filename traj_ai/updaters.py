@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 
 
+
 def roll_state(x: torch.Tensor, num_past: int):
     """Push past positions and velocities to the n - 1 frame.
 
