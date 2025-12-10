@@ -46,7 +46,7 @@ class LocalVelocityUpdater(nn.Module):
     
     Attributes:
         dt (float): The time step for numerical integration.
-        num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones. 
+        num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones.
     """
     
     def __init__(self, dt: float, num_past: int) -> None:
@@ -70,7 +70,7 @@ class LocalVelocityUpdater(nn.Module):
 
     Arguments:
         x (torch.Tensor): A tensor of particle states, of dimension (num_particles, dim_particle_state).
-        y (torch.Tensor): A tensor of new particle velocities in a normal-tangential frame relative to the current velocity (v_tangential, v_normal), of dimension (num_particles, 2).
+        y (torch.Tensor): A tensor of new particle velocities, in a normal-tangential frame relative to the current velocity (v_tangential, v_normal), of dimension (num_particles, 2).
 
     Returns:
         torch.Tensor: The updated state, of dimension (num_particles, dim_particle_state)
@@ -83,6 +83,7 @@ class LocalVelocityUpdater(nn.Module):
     ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
     
     # Process velocity
+    x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
     v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
     e1 = torch.tensor([1, 0], dtype=x.dtype, device=x.device) # Global frame reference vector
     e1 = e1.repeat(x.shape[0], 1)
@@ -91,7 +92,7 @@ class LocalVelocityUpdater(nn.Module):
 
     # Update state
     x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
-    x_new[:, POS_START:(POS_START + POS_DIM)] += v * self.dt # Update position
+    x_new[:, POS_START:(POS_START + POS_DIM)] = x0 + v * self.dt # Update position
     x_new[:, VEL_START:(VEL_START + VEL_DIM)] = v # Update velocity
     # Update other parts of state as needed
     # Nothing for now, since the dynamics is what we're interested in!
@@ -107,19 +108,22 @@ class LocalAccelerationUpdater(nn.Module):
     
     Attributes:
         dt (float): Time step for numerical integration.
+        num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones.
     """
     
-    def __init__(self, dt: float) -> None:
+    def __init__(self, dt: float, num_past: int) -> None:
         """Constructor for an acceleration-based state updater.
 
         Arguments:
             dt (float): Time step for numerical integration.
+            num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones.
 
         Returns:
             None
         """
-        super(AccelerationUpdater, self).__init__()
+        super(LocalAccelerationUpdater, self).__init__()
         self.dt = dt
+        self.num_past = num_past
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
     """Update particle states based on an acceleration inductive bias.
@@ -128,16 +132,30 @@ class LocalAccelerationUpdater(nn.Module):
 
     Arguments:
         x (torch.Tensor): A tensor of particle states, of dimension (num_particles, dim_particle_state).
-        y (torch.Tensor): A tensor of particle accelerations, of dimension (num_particles, 2).
+        y (torch.Tensor): A tensor of particle accelerations, in a normal-tangential frame relative to the current velocity (a_tangential, a_normal), of dimension (num_particles, 2).
 
     Returns:
         torch.Tensor: The updated state, of dimension (num_particles, dim_particle_state)
     """
-    x_new = x.clone() # Clone to preserve gradient calculations
-    v0 = x[:, ???]
-    x_new[:, ???] += v0 * self.dt + 1/2 * y * self.dt ** 2 # Update position
-    # Shift prior frames too
-    x_new[:, ???] += y * self.dt # Update velocity
-    # Shift prior frames too
+    # Reference indices
+    POS_START = 0
+    POS_DIM = 2
+    VEL_START = POS_START + (self.num_past + 1) * POS_DIM
+    VEL_DIM = 2
+    ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
+
+    # Process acceleration
+    x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
+    v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
+    e1 = torch.tensor([1, 0], dtype=x.dtype, device=x.device) # Global frame reference vector
+    e1 = e1.repeat(x.shape[0], 1)
+    theta = get_angle_2D(e1, v0) # Angle between normal-tangential and global coordinate systems
+    a = rotate_2D(y, theta) # Rotate new accelerations from normal/tangential to global frame
+
+    # Update state
+    x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
+    x_new[:, POS_START:(POS_START + POS_DIM)] = x0 + v0 * self.dt + 1/2 * a * self.dt ** 2 # Update position
+    x_new[:, VEL_START:(VEL_START + VEL_DIM)] = v0 +  a * self.dt # Update velocity
     # Update other parts of state as needed
+    # Nothing for now, since the dynamics is what we're interested in!
     return x_new
