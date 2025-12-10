@@ -87,10 +87,8 @@ class LocalVelocityUpdater(nn.Module):
     # Process velocity
     x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
     v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
-    e1 = torch.tensor([1, 0], dtype=x.dtype, device=x.device) # Global frame reference vector
-    e1 = e1.repeat(x.shape[0], 1)
-    theta = get_angle_2D(e1, v0) # Angle between normal-tangential and global coordinate systems
-    v = rotate_2D(y, theta) # Rotate new velocities from normal/tangential to global frame
+    e1 = torch.tensor([1.0, 0.0], dtype=x.dtype, device=x.device).repeat(x.shape[0], 1) # Global frame reference vector
+    v = to_frame_2D(y, v0, e1) # Rotate new velocities from normal/tangential to global frame
 
     # Update state
     x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
@@ -149,10 +147,8 @@ class LocalAccelerationUpdater(nn.Module):
     # Process acceleration
     x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
     v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
-    e1 = torch.tensor([1, 0], dtype=x.dtype, device=x.device) # Global frame reference vector
-    e1 = e1.repeat(x.shape[0], 1)
-    theta = get_angle_2D(e1, v0) # Angle between normal-tangential and global coordinate systems
-    a = rotate_2D(y, theta) # Rotate new accelerations from normal/tangential to global frame
+    e1 = torch.tensor([1.0, 0.0], dtype=x.dtype, device=x.device).repeat(x.shape[0], 1) # Global frame reference vector
+    a = to_frame_2D(y, v0, e1) # Rotate new accelerations from normal/tangential to global frame
 
     # Update state
     x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
