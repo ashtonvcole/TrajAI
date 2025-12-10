@@ -1,4 +1,4 @@
-from .batch_geometry import get_angle_2D, rotate_2D
+from .batch_geometry import get_angle_2D, rotate_2D, to_frame_2D
 import torch
 import torch.nn as nn
 
@@ -103,10 +103,8 @@ class NormalTangentialObjectiveStateTranscoder(nn.Module):
             torch.Tensor: Rotation-invariant displacement (displacement_tangential, displacement_normal), of dimension (num_particles, 2)
         """
         ref = ref / (torch.norm(ref, dim=1, keepdim=True) + self.epsilon) # Normalize reference vector
-        e1 = torch.tensor([1, 0], dtype=ref.dtype, device=ref.device) # Global frame reference vector
-        e1 = e1.repeat(ref.shape[0], 1)
-        theta = get_angle_2D(ref, e1) # Angle between normal-tangential and global coordinate systems
-        return rotate_2D(pos_present - pos_past, theta) # Rotate displacements from global to normal-tangential frame
+        e1 = torch.tensor([1.0, 0.0], dtype=ref.dtype, device=ref.device).repeat(ref.shape[0], 1) # Global frame reference vector
+        return to_frame_2D(pos_present - pos_past, e1, ref) # Rotate displacements from global to normal-tangential frame
 
     def _get_objective_velocity(self, vel_present: torch.Tensor, vel_past: torch.Tensor) -> torch.Tensor:
         """Get velocity in normal-tangential coordinates (vt, vn).
@@ -119,10 +117,8 @@ class NormalTangentialObjectiveStateTranscoder(nn.Module):
             torch.Tensor: Rotation-invariant velocity (velocity_tangential, velocity_normal), of dimension (num_particles, 2)
         """
         ref = vel_present / (torch.norm(vel_present, dim=1, keepdim=True) + self.epsilon) # Normalize reference vector
-        e1 = torch.tensor([1, 0], dtype=ref.dtype, device=ref.device) # Global frame reference vector
-        e1 = e1.repeat(ref.shape[0], 1)
-        theta = get_angle_2D(ref, e1) # Angle between normal-tangential and global coordinate systems
-        return rotate_2D(vel_past, theta) # Rotate displacements from global to normal-tangential frame
+        e1 = torch.tensor([1.0, 0.0], dtype=ref.dtype, device=ref.device).repeat(ref.shape[0], 1) # Global frame reference vector
+        return to_frame_2D(vel_past, e1, ref) # Rotate displacements from global to normal-tangential frame
 
 
 
@@ -138,7 +134,7 @@ class PolarObjectiveStateTranscoder(nn.Module):
 
     state_invariant = [r[1], theta[1], ..., r[num_past], theta[num_past],
                        v,
-                       R[1], Theta[1], ..., r[num_past], theta[num_past],
+                       R[1], Theta[1], ..., R[num_past], Theta[num_past],
                        additional, attributes, here, ...]
 
     r[i]: The norm of the displacement between frames n and n - i.
