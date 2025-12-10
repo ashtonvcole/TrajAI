@@ -1,4 +1,4 @@
-from .batch_geometry import get_angle_2D, rotate_2D
+from .batch_geometry import to_frame_2D
 import torch
 import torch.nn as nn
 
