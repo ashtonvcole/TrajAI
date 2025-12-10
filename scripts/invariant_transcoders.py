@@ -1,23 +1,6 @@
+from batch_geometry import get_angle_2D
 import torch
 import torch.nn as nn
-
-
-
-def get_angle_2D(ref: torch.Tensor, vec: torch.Tensor) -> torch.Tensor:
-        """Get the angle of a vector relative to a reference vector.
-
-        The formula is atan2(ref x vec . e3, ref . vec)
-
-        Arguments:
-            ref (torch.Tensor): A list of reference vectors, of dimension (n, 2).
-            vec (torch.Tensor): A list of comparison vectors, of dimension (n, 2).
-
-        Returns:
-            torch.Tensor: The signed angle relative to the reference vector, of dimension (n, 1).
-        """
-        cross = ref[:, 0] * vec[:, 1] - ref[:, 1] * vec[:, 0]
-        dot = ref[:, 0] * vec[:, 0] + ref[:, 1] * vec[:, 1]
-        return torch.atan2(cross, dot).unsqueeze(-1)
 
 
 
