@@ -4,7 +4,7 @@ from .gnn import GraphNeuralNetwork, GraphNetwork, GraphLayer
 from .gns import GraphNeuralSimulator
 
 __all__ = [
-    'RectNN,
+    'RectNN',
     'GraphLayer',
     'GraphNetwork',
     'GraphNeuralNetwork',
