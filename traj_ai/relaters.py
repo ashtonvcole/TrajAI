@@ -82,18 +82,18 @@ class NormalTangentialDistanceObjectiveStateRelater(nn.Module):
             DX_LOCAL = DX_START + i * POS_DIM
             DV_LOCAL = DV_START + i * VEL_DIM
             D_LOCAL = D_START + i * D_DIM
-            DX_MASK = (i * POS_DIM):((i + 1) * POS_DIM) # For dx
-            DV_MASK = (i * VEL_DIM):((i + 1) * VEL_DIM) # For dv
+            DX_START = i * POS_DIM # For dx tensor
+            DV_START = i * VEL_DIM # For dv tensor
 
             # Get tangent from the influenced particle
             ref = x_j[:, VEL_LOCAL:(VEL_LOCAL + VEL_DIM)]
             ref = ref / (torch.norm(ref, dim=1, keepdim=True) + self.epsilon) # Normalize reference vector
             
-            r[:, DX_LOCAL:(DX_LOCAL + POS_DIM)] = to_frame_2D(dx[:, DX_MASK], e1, ref) # Rotate displacements from global to normal-tangential frame
-            r[:, DV_LOCAL:(DV_LOCAL + VEL_DIM)] = to_frame_2D(dv[:, DV_MASK], e1, ref) # Rotate velocities from global to normal-tangential frame
+            r[:, DX_LOCAL:(DX_LOCAL + POS_DIM)] = to_frame_2D(dx[:, DX_START:(DX_START + POS_DIM)], e1, ref) # Rotate displacements from global to normal-tangential frame
+            r[:, DV_LOCAL:(DV_LOCAL + VEL_DIM)] = to_frame_2D(dv[:, DV_START:(DV_START + VEL_DIM)], e1, ref) # Rotate velocities from global to normal-tangential frame
 
             # Distance
-            r[:, D_LOCAL:(D_LOCAL + D_DIM)] = torch.norm(dx[:, DX_MASK], dim=1, keepdim=True)
+            r[:, D_LOCAL:(D_LOCAL + D_DIM)] = torch.norm(dx[:, DX_START:(DX_START + POS_DIM)], dim=1, keepdim=True)
 
         # Use other parts of state as needed
         # Nothing for now, since the dynamics is what we're interested in!
