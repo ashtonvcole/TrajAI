@@ -23,6 +23,8 @@ def roll_state(x: torch.Tensor, num_past: int):
     Returns:
         torch.Tensor: An intermediate adjustment to the state, where the current positon is shifted to the n - 1 position, the n - 1 to the n - 2, and so on.
     """
+    if num_past == 0:
+        return x # Don't waste your breath
     x_new = x.clone() # Clone to preserve gradient calculations
     # Reference indices
     POS_START = 0
