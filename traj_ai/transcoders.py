@@ -31,11 +31,11 @@ class NormalTangentialObjectiveStateTranscoder(nn.Module):
     """
 
     def __init__(self, num_past: int, epsilon: float = 1e-6) -> None:
-        """Constructor for a polar translationally and rotationally invariant node transcoder.
+        """Constructor for a normal-tangential translationally and rotationally invariant node transcoder.
 
         Arguments:
             num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones.
-            epsilon (float): Adjustment facor used to handle zero velocities and displacements. This should be a few orders of magnitude smaller than typical velocities.
+            epsilon (float, optional): Adjustment facor used to handle zero velocities and displacements. This should be a few orders of magnitude smaller than typical velocities. Default is 1e-6.
         
         Returns:
             None
@@ -59,12 +59,14 @@ class NormalTangentialObjectiveStateTranscoder(nn.Module):
         VEL_START = POS_START + (self.num_past + 1) * POS_DIM
         VEL_DIM = 2
         ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
+        ATT_LEN = x.shape[1] - ATT_START
         P_START = 0
         V_START = P_START + self.num_past * POS_DIM
         A_START = V_START + self.num_past * VEL_DIM
+        XN_DIM = self.num_past * POS_DIM + 1 + self.num_past * VEL_DIM + ATT_LEN
         
         # Create new state
-        x_new = torch.zeros((x.shape[0], x.shape[1] - 3), device=x.device)
+        x_new = torch.zeros((x.shape[0], XN_DIM), device=x.device)
         
         # Get present position and velocity
         pos_present = x[:, POS_START:(POS_START + POS_DIM)]
@@ -153,7 +155,7 @@ class PolarObjectiveStateTranscoder(nn.Module):
 
         Arguments:
             num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones.
-            epsilon (float): Adjustment facor used to handle zero velocities and displacements. This should be a few orders of magnitude smaller than typical velocities.
+            epsilon (float, optional): Adjustment facor used to handle zero velocities and displacements. This should be a few orders of magnitude smaller than typical velocities. Default is 1e-6.
         
         Returns:
             None
@@ -177,12 +179,14 @@ class PolarObjectiveStateTranscoder(nn.Module):
         VEL_START = POS_START + (self.num_past + 1) * POS_DIM
         VEL_DIM = 2
         ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
+        ATT_LEN = x.shape[1] - ATT_START
         P_START = 0
         V_START = P_START + self.num_past * POS_DIM
         A_START = V_START + self.num_past * VEL_DIM
+        XN_DIM = self.num_past * POS_DIM + 1 + self.num_past * VEL_DIM + ATT_LEN
         
         # Create new state
-        x_new = torch.zeros((x.shape[0], x.shape[1] - 3), device=x.device)
+        x_new = torch.zeros((x.shape[0], XN_DIM), device=x.device)
         
         # Get present position and velocity
         pos_present = x[:, POS_START:(POS_START + POS_DIM)]
@@ -221,7 +225,7 @@ class PolarObjectiveStateTranscoder(nn.Module):
             torch.Tensor: Rotation-invariant displacement (distance, angle_relative_to_tangent), of dimension (num_particles, 2)
         """
         ref = ref / (torch.norm(ref, dim=1, keepdim=True) + self.epsilon) # Normalize reference vector
-        rt = torch.zeros(pos_present.shape, device=pos_present.device)
+        rt = torch.zeros_like(pos_present)
         disp = pos_present - pos_past
         dist = torch.norm(disp, dim=1)
         rt[:, 0] = dist # Distance
@@ -238,7 +242,7 @@ class PolarObjectiveStateTranscoder(nn.Module):
         Returns:
             torch.Tensor: Rotation-invariant velocity change (norm_of_difference, angle), of dimension (num_particles, 2)
         """
-        rt = torch.zeros(vel_present.shape, device=vel_present.device)
+        rt = torch.zeros_like(vel_present)
         rt[:, 0] = torch.norm(vel_present - vel_past, dim=1) # Norm of velocity change (displacement in velocity space)
         rt[:, 1] = get_angle_2D(vel_present, vel_past) # Angle
         return rt
