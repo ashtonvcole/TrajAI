@@ -41,7 +41,7 @@ class InvariantStateTranscoder(nn.Module):
     Theta[i]: The angle between the two vectors in radians.
 
     Attributes:
-        num_past: The number of additional positions and velocities encoded into the state, besides the current ones.
+        num_past (int): The number of additional positions and velocities encoded into the state, besides the current ones.
     """
 
     def __init__(self, num_past: int, epsilon: float = 1e-6) -> None:
