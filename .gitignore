@@ -9,4 +9,6 @@ __pycache__/
 *.jpg
 *.png
 *.json
+*.csv
+*.zip
 venv/
