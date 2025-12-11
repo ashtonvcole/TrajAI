@@ -116,4 +116,4 @@ def train(simulator: gns.GraphNeuralSimulator, train_loader: torch.DataLoader, v
     # Set to evaluation mode
     model.eval()
     
-    return loss_train, loss_one_step, loss_rollout
+    return losses_train, losses_one_step, losses_rollout
