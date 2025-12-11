@@ -137,6 +137,23 @@ def main():
     # Part 2: Train Model #
     #######################
 
+    # Need to define some things here
+
+    losses_train, losses_one_step, losses_rollout = gt.train(
+        simulator: gns.GraphNeuralSimulator,
+        train_loader: torch.DataLoader,
+        val_loader: torch.DataLoader,
+        val_rollout: torch.DataLoader,
+        criterion: nn.Module,
+        optimizer: optim.Optimizer,
+        scheduler: optim.lr_scheduler._LRScheduler,
+        num_epochs: int = 500,
+        rollout_interval: int = 10,
+        pr: int = 0,
+        patience: int = 0,
+        loss_threshold: float = 0
+    )
+
     ######################
     # Part 3: Save Model #
     ######################
