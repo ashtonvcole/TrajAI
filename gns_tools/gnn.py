@@ -5,6 +5,8 @@ import torch_geometric as pyg
 import torch_geometric.data as pyg_data
 import torch_scatter
 
+
+
 class GraphNeuralNetwork(nn.Module):
     """Graph Neural Network with encoder, processor, and decoder."""
     

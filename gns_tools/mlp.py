@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+
+
 class RectNN(nn.Module):
     """A sequential MLP with a fixed width for all hidden layers."""
 
