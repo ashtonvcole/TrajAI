@@ -1,9 +1,9 @@
-README.md
 setup.py
 gns_tools/__init__.py
 gns_tools/gnn.py
 gns_tools/gns.py
 gns_tools/mlp.py
+gns_tools/trainers.py
 gns_tools.egg-info/PKG-INFO
 gns_tools.egg-info/SOURCES.txt
 gns_tools.egg-info/dependency_links.txt
