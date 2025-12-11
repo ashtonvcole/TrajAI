@@ -1,4 +1,4 @@
-# `gns_tools` Library
+# `gns_tools` Module
 
 Functions and classes to build and train an arbitrary Graph Neural Simulator.
 

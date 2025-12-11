@@ -8,7 +8,7 @@ Functions and classes for objective-frame dynamics prediction.
 - [`losses.py`](losses.py): Pytorch modules to compute loss based on position or velocity discrepancies.
 - [`relaters.py`](relaters.py): Pytorch modules to compute a relationship between an influencing and influenced particle, e.g., relative displacement.
 - [`transcoders.py`](transcoders.py): Pytorch modules to transform a state into an objective one, i.e., indifferent to rotations and translations.
-- [`updaters.py`](updaters.py):
+- [`updaters.py`](updaters.py): Pytorch modules to update a state with a kinematic inductive bias, e.g., the GNN learns acceleration.
 
 ## Common Tensor Conventions
 
