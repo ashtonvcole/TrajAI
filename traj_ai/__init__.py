@@ -1,9 +1,21 @@
 # Expose component modules
-from .updaters import LocalVelocityUpdater, LocalAccelerationUpdater
+from .losses import (
+    StatePositionMeanSquarePositionLoss,
+    StateStateMeanSquarePositionLoss,
+    StateVelocityMeanSquareVelocityLoss,
+    StateStateMeanSquareVelocityLoss
+)
+from .relaters import NormalTangentialDistanceObjectiveStateRelater
 from .transcoders import InvariantStateTranscoder
+from .updaters import LocalVelocityUpdater, LocalAccelerationUpdater
 
 __all__ = [
+    'InvariantStateTranscoder',
     'LocalVelocityUpdater',
     'LocalAccelerationUpdater',
-    'InvariantStateTranscoder'
+    'NormalTangentialDistanceObjectiveStateRelater',
+    'StateStateMeanSquarePositionLoss',
+    'StateStateMeanSquareVelocityLoss',
+    'StatePositionMeanSquarePositionLoss',
+    'StateVelocityMeanSquareVelocityLoss'
 ]
