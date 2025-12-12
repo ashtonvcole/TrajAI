@@ -54,39 +54,39 @@ def rollout(simulator: GraphNeuralSimulator, x: torch.Tensor, num_pred: int) -> 
     Returns:
         torch.Tensor: The full time series of system states, of dimenion (num_states + num_pred, num_particles, dim_state).
     """
-    model.eval()
+    simulator.eval()
     x_series = x.clone() # Clone to preserve gradient calculations
     for i in range(num_pred):
         with torch.no_grad():
             x = x_series[-1, :, :] # Current global state, of dimension (num_particles, dim_state)
             x_new = simulator(x) # Get new global state
-            x_series = torch.cat((x_series, x_new.unsqueeze(0)) dim=0)
+            x_series = torch.cat((x_series, x_new.unsqueeze(0)), dim=0)
     return x_series
 
 
 
-def rollout_reduced(simulator: GraphNeuralSimulator, x_rollout: torch.Tensor, num_pred: int, state_composer: nn.Module, state_decomposer: nn.Module) -> torch.Tensor:
+def rollout_reduced(simulator: GraphNeuralSimulator, x: torch.Tensor, num_pred: int, state_composer: nn.Module, state_decomposer: nn.Module) -> torch.Tensor:
     """Apply a Graph Neural Simulator in a rollout fashion, to predict future states of a set of particles.
 
     Reduced rollout is useful when a Graph Neural Simulator incorporates information about past states, i.e. memory, into the forward prediction. The variable x_rollout does not hold the full states, but rather strictly the information associated with the present. Thus, to apply the simulator, full sates need to be constructed using the stae composer.
 
     Arguments:
         simulator (GraphNeuralSimulator): A Graph Neural Simulator, which acts as a state tranition function.
-        x_rollout (torch.Tensor): A list of reduced particle states, of dimension (num_states, num_particles, dim_state_reduced). Note that num_state must be large enough for the state_composer.
+        x (torch.Tensor): A list of reduced particle states, of dimension (num_states, num_particles, dim_state_reduced). Note that num_state must be large enough for the state_composer.
         num_pred (int): The number of forward predictions to make.
-        state_composer (nn.Module): A function which converts a window of reduced states to a full state of dimension dim_state. Must have an attribute window (int) which holds the total number of reduced states which are used to compose the full state.
+        state_composer (nn.Module): A function which converts a window of reduced states to a full state of dimension dim_state. Must have an attribute num_past (int) which holds the number of reduced states, besides the present, which are used to compose the full state.
         state_decomposer (nn.Module): A function which converts a batch of full states of dimension (num_particles, dim_state) to a single reduced state, of dimension (num_particles, dim_state_reduced).
 
     Returns:
         torch.Tensor: The full time series of system states, of dimenion (num_states + num_pred, num_particles, dim_state_reduced).
     """
-    model.eval()
-    window = state_composer.window # How many reduced states are embedded in a single particle state
+    simulator.eval()
+    window = state_composer.num_past + 1 # How many reduced states are embedded in a single particle state
     x_series = x.clone() # Clone to preserve gradient calculations
     for i in range(num_pred):
         with torch.no_grad():
-            x = state_composer(x_series[-window:, :, :]) # Current global state, of dimension (num_particles, dim_state)
-            x_new = simulator(x) # Get new global state
-            x_new_reduced = state_decomposer(x_new) # Extract most recent reduced state from full state
-            x_series = torch.cat((x_series, x_new_reduced.unsqueeze(0)) dim=0) # Append to time series
+            x_full = state_composer(x_series[-window:, :, :]) # Current global state, of dimension (num_particles, dim_state)
+            x_new_full = simulator(x_full) # Get new global state
+            x_new_reduced = state_decomposer(x_new_full) # Extract most recent reduced state from full state
+            x_series = torch.cat((x_series, x_new_reduced.unsqueeze(0)), dim=0) # Append to time series
     return x_series
