@@ -6,3 +6,10 @@ __pycache__/
 *.out
 *.synctex.gz
 *.egg-info
+*.MP4
+*.jpg
+*.png
+*.json
+*.csv
+*.zip
+venv/

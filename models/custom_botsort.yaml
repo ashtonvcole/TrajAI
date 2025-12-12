@@ -1,0 +1,75 @@
+# # Ultralytics BoT-SORT Pytorch (Corrected Again)
+# #
+# # Arguments
+# tracker_type: botsort # DO NOT CHANGE
+# track_high_thresh: 0.5 # high confidence threshold for first-stage matching
+# track_low_thresh: 0.1 # low confidence threshold for second-stage matching
+# new_track_thresh: 0.7
+
+#  # threshold for new track initialization
+
+# # --- YOUR CUSTOM SETTING ---
+# track_buffer: 60 # number of frames to buffer a lost track (Default is 30)
+# # -------------------------
+
+# match_thresh: 0.8 # threshold for matching tracks (IoU)
+
+# # --- RE-ID SETTINGS ---
+# with_reid: False # MUST be True to re-identify
+# model: "auto" # Triggers auto-downloader
+
+# # --- THIS IS THE NEW FIX ---
+# # This new line is required by the updated tracker code
+# fuse_score: False
+# # ---------------------
+
+# proximity_thresh: 0.5 # threshold for motion matching
+# appearance_thresh: 0.25 # threshold for appearance (ReID) matching
+# w_motion: 1.0 # weight for motion cost
+# w_appearance: 1.0 # weight for appearance cost
+
+# # Other
+# cmc_method: sparseOptFlow  # <--- Much faster than 'orb', but better than 'none'
+# gmc_method: sparseOptFlow
+# gmc_downsample: 2
+# gmc_args:
+#   d: 1
+#   k: 30
+#   n: 30
+#   t: 0.4
+
+# Ultralytics BoT-SORT Pytorch (No-ReID / Motion Only)
+#
+# Arguments
+tracker_type: botsort
+track_high_thresh: 0.3  # High confidence to start matching
+track_low_thresh: 0.1   # Low confidence to recover lost tracks
+new_track_thresh: 0.5   # Very high confidence to CREATE a new track (Prevents noise)
+
+# --- BUFFER ---
+track_buffer: 60        # 2 seconds (at 30fps)
+
+match_thresh: 0.85       # Strict IoU matching (80% overlap required)
+
+# --- RE-ID SETTINGS (DISABLED) ---
+with_reid: False        # DISABLED
+model:                  # Empty to prevent download
+
+# Fix for new Ultralytics versions
+fuse_score: False
+
+# Weights (Pure Motion)
+proximity_thresh: 0.5
+appearance_thresh: 0.25 # Irrelevant when w_appearance is 0
+w_motion: 1.0           # 100% trust in Motion/IoU
+w_appearance: 0.0       # 0% trust in Appearance
+
+# --- MOTION COMPENSATION ---
+cmc_method: sparseOptFlow  # Fast and effective for drone pans
+gmc_method: sparseOptFlow
+gmc_downsample: 2
+gmc_args:
+  d: 1
+  k: 30
+  n: 30
+  t: 0.4
