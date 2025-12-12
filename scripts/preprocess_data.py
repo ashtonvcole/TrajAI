@@ -98,7 +98,7 @@ def process_data(df: pd.DataFrame, min_chunk_length: int) -> torch.Tensor:
             print('Too short, excluding')
             continue
         runners_state = chunk_data[runner_columns].iloc[0] # Which runners are in
-        runners_present = [f'track_{j + 1}' for j in range(num_runners) if runners_state[f'track_{j + 1}'] == 1]
+        runners_present = [runner for runner in runner_columns if runners_state[runner] == 1]
         print(f'present runners: {runners_present}')
         num_runners_chunk = chunk_data['num_runners'].iloc[0]
         print(f'number of runners: {num_runners_chunk}')
