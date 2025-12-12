@@ -1,4 +1,4 @@
-import .mlp
+from . import mlp
 import torch
 import torch.nn as nn
 import torch_geometric as pyg
@@ -95,14 +95,14 @@ class GraphNetwork(nn.Module):
         for i in range(num_layers):
             self.layers.append(GraphLayer(dim_node, dim_edge, mlp_width, mlp_depth, mlp_activation))
 
-    def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
+    def forward(self, graph: pyg_data.Data) -> pyg_data.Data:
         """Apply the Graph Network to a graph.
 
         Arguments:
-            graph (torch_geometric.data.Data): The initial graph, with nodes, edges, and connectivity.
+            graph (pyg_data.Data): The initial graph, with nodes, edges, and connectivity.
 
         Returns:
-            torch_geometric.data.Data: The updated graph object.
+            pyg_data.Data: The updated graph object.
         """
         for layer in self.layers:
             graph = layer(graph)
@@ -173,16 +173,16 @@ class GraphLayer(pyg.nn.MessagePassing):
         net_messages = torch_scatter.scatter(messages, indices, dim=self.node_dim, reduce="sum")
         return (messages, net_messages)
 
-    def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
+    def forward(self, graph: pyg_data.Data) -> pyg_data.Data:
         """Apply the graph layer to a graph.
 
         Given a graph, represented by nodes, edge weights, and a connectivity mapping, the layer produces new nodes and edge weights through a process called message passing. Messages are created by feeding an edge's weights and its associated nodes into a MLP. This message is added to the existing edge weights. Nodes are updated by aggregating messages directed at a node, and feeding them and the node through a second MLP.
 
         Arguments:
-            graph (torch_geometric.data.Data): The initial graph, with nodes, edges, and connectivity.
+            graph (pyg_data.Data): The initial graph, with nodes, edges, and connectivity.
 
         Returns:
-            torch_geometric.data.Data: The updated graph object.
+            pyg_data.Data: The updated graph object.
         """
         # Extract nodes, edges, and connectivity for operations
         nodes = graph.x

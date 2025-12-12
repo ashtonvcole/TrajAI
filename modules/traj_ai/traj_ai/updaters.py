@@ -67,37 +67,37 @@ class LocalVelocityUpdater(nn.Module):
         self.num_past = num_past
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-    """Update particle states based on an velocity inductive bias.
-
-    Assuming that the state of the system most directly determines particles' velocities, the next position and velocity are computed for the next state using constant-velocity kinematic equations.
-
-    Arguments:
-        x (torch.Tensor): A tensor of particle states, of dimension (num_particles, dim_particle_state).
-        y (torch.Tensor): A tensor of new particle velocities, in a normal-tangential frame relative to the current velocity (v_tangential, v_normal), of dimension (num_particles, 2).
-
-    Returns:
-        torch.Tensor: The updated state, of dimension (num_particles, dim_particle_state)
-    """
-    # Reference indices
-    POS_START = 0
-    POS_DIM = 2
-    VEL_START = POS_START + (self.num_past + 1) * POS_DIM
-    VEL_DIM = 2
-    ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
+        """Update particle states based on an velocity inductive bias.
     
-    # Process velocity
-    x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
-    v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
-    e1 = torch.tensor([1.0, 0.0], dtype=x.dtype, device=x.device).repeat(x.shape[0], 1) # Global frame reference vector
-    v = to_frame_2D(y, v0, e1) # Rotate new velocities from normal/tangential to global frame
-
-    # Update state
-    x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
-    x_new[:, POS_START:(POS_START + POS_DIM)] = x0 + v * self.dt # Update position
-    x_new[:, VEL_START:(VEL_START + VEL_DIM)] = v # Update velocity
-    # Update other parts of state as needed
-    # Nothing for now, since the dynamics is what we're interested in!
-    return x_new
+        Assuming that the state of the system most directly determines particles' velocities, the next position and velocity are computed for the next state using constant-velocity kinematic equations.
+    
+        Arguments:
+            x (torch.Tensor): A tensor of particle states, of dimension (num_particles, dim_particle_state).
+            y (torch.Tensor): A tensor of new particle velocities, in a normal-tangential frame relative to the current velocity (v_tangential, v_normal), of dimension (num_particles, 2).
+    
+        Returns:
+            torch.Tensor: The updated state, of dimension (num_particles, dim_particle_state)
+        """
+        # Reference indices
+        POS_START = 0
+        POS_DIM = 2
+        VEL_START = POS_START + (self.num_past + 1) * POS_DIM
+        VEL_DIM = 2
+        ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
+        
+        # Process velocity
+        x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
+        v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
+        e1 = torch.tensor([1.0, 0.0], dtype=x.dtype, device=x.device).repeat(x.shape[0], 1) # Global frame reference vector
+        v = to_frame_2D(y, v0, e1) # Rotate new velocities from normal/tangential to global frame
+    
+        # Update state
+        x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
+        x_new[:, POS_START:(POS_START + POS_DIM)] = x0 + v * self.dt # Update position
+        x_new[:, VEL_START:(VEL_START + VEL_DIM)] = v # Update velocity
+        # Update other parts of state as needed
+        # Nothing for now, since the dynamics is what we're interested in!
+        return x_new
 
 
 
@@ -127,34 +127,34 @@ class LocalAccelerationUpdater(nn.Module):
         self.num_past = num_past
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
-    """Update particle states based on an acceleration inductive bias.
-
-    Assuming that the state of the system most directly determines particles' forces/accelerations, the next position and velocity are computed for the next state using constant-acceleration kinematic equations.
-
-    Arguments:
-        x (torch.Tensor): A tensor of particle states, of dimension (num_particles, dim_particle_state).
-        y (torch.Tensor): A tensor of particle accelerations, in a normal-tangential frame relative to the current velocity (a_tangential, a_normal), of dimension (num_particles, 2).
-
-    Returns:
-        torch.Tensor: The updated state, of dimension (num_particles, dim_particle_state)
-    """
-    # Reference indices
-    POS_START = 0
-    POS_DIM = 2
-    VEL_START = POS_START + (self.num_past + 1) * POS_DIM
-    VEL_DIM = 2
-    ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
-
-    # Process acceleration
-    x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
-    v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
-    e1 = torch.tensor([1.0, 0.0], dtype=x.dtype, device=x.device).repeat(x.shape[0], 1) # Global frame reference vector
-    a = to_frame_2D(y, v0, e1) # Rotate new accelerations from normal/tangential to global frame
-
-    # Update state
-    x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
-    x_new[:, POS_START:(POS_START + POS_DIM)] = x0 + v0 * self.dt + 1/2 * a * self.dt ** 2 # Update position
-    x_new[:, VEL_START:(VEL_START + VEL_DIM)] = v0 +  a * self.dt # Update velocity
-    # Update other parts of state as needed
-    # Nothing for now, since the dynamics is what we're interested in!
-    return x_new
+        """Update particle states based on an acceleration inductive bias.
+    
+        Assuming that the state of the system most directly determines particles' forces/accelerations, the next position and velocity are computed for the next state using constant-acceleration kinematic equations.
+    
+        Arguments:
+            x (torch.Tensor): A tensor of particle states, of dimension (num_particles, dim_particle_state).
+            y (torch.Tensor): A tensor of particle accelerations, in a normal-tangential frame relative to the current velocity (a_tangential, a_normal), of dimension (num_particles, 2).
+    
+        Returns:
+            torch.Tensor: The updated state, of dimension (num_particles, dim_particle_state)
+        """
+        # Reference indices
+        POS_START = 0
+        POS_DIM = 2
+        VEL_START = POS_START + (self.num_past + 1) * POS_DIM
+        VEL_DIM = 2
+        ATT_START = VEL_START + (self.num_past + 1) * VEL_DIM
+    
+        # Process acceleration
+        x0 = x[:, POS_START:(POS_START + POS_DIM)] # For later
+        v0 = x[:, VEL_START:(VEL_START + VEL_DIM)] # Tangent
+        e1 = torch.tensor([1.0, 0.0], dtype=x.dtype, device=x.device).repeat(x.shape[0], 1) # Global frame reference vector
+        a = to_frame_2D(y, v0, e1) # Rotate new accelerations from normal/tangential to global frame
+    
+        # Update state
+        x_new = roll_state(x, self.num_past) # Shift prior frames, cloning in the process
+        x_new[:, POS_START:(POS_START + POS_DIM)] = x0 + v0 * self.dt + 1/2 * a * self.dt ** 2 # Update position
+        x_new[:, VEL_START:(VEL_START + VEL_DIM)] = v0 +  a * self.dt # Update velocity
+        # Update other parts of state as needed
+        # Nothing for now, since the dynamics is what we're interested in!
+        return x_new

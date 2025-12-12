@@ -1,20 +1,21 @@
-import .gns
+from . import gns
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 
 
 
-def train(simulator: gns.GraphNeuralSimulator, train_loader: torch.DataLoader, val_loader: torch.DataLoader, val_rollout: torch.DataLoader, criterion: nn.Module, optimizer: optim.Optimizer, scheduler: optim.lr_scheduler._LRScheduler, num_epochs: int = 500, rollout_interval: int = 10, pr: int = 0, patience: int = 0, loss_threshold: float = 0) -> tuple:
+def train(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader, val_loader: DataLoader, val_rollout: DataLoader, criterion: nn.Module, optimizer: optim.Optimizer, scheduler: optim.lr_scheduler._LRScheduler, num_epochs: int = 500, rollout_interval: int = 10, pr: int = 0, patience: int = 0, loss_threshold: float = 0) -> tuple:
     """Generic training function for a GraphNeuralSimulator.
 
     The rollout is computed using the full state. If the simulator input state includes past physical states, e.g., the past 5 positions and velocities, this may be memory-inefficient.
 
     Arguments:
         simulator (gns.GraphNeuralSimulator): A simulator to train.
-        train_loader (torch.DataLoader): An appropriate Pytorch DataLoader object. For any batch, which corresponds to a contiguous time series, batch.traj is a tensor of states of dimension (len_trajectory, num_particles, dim_state).
-        val_loader (torch.DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
-        val_rollout (torch.DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
+        train_loader (DataLoader): An appropriate Pytorch DataLoader object. For any batch, which corresponds to a contiguous time series, batch.traj is a tensor of states of dimension (len_trajectory, num_particles, dim_state).
+        val_loader (DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
+        val_rollout (DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
         criterion (nn.Module): An appropriate loss function to minimize during training. This criterion should operate on states (state_pred, state_target), not state_reduced or the update (internal gnn.GraphNeuralNetwork output).
         optimizer (optim.Optimizer): An appropriate Pytorch optimizer, e.g., Adam. Must not require a closure function, like L-BFGS does.
         scheduler (optim.lr_scheduler._LRScheduler): An appropriate Pytorch learning rate scheduler.
@@ -132,14 +133,14 @@ def train(simulator: gns.GraphNeuralSimulator, train_loader: torch.DataLoader, v
 
 
 
-def train_reduced(simulator: gns.GraphNeuralSimulator, train_loader: torch.DataLoader, val_loader: torch.DataLoader, val_rollout: torch.DataLoader, state_composer: nn.Module, state_decomposer: nn.Module, criterion: nn.Module, optimizer: optim.Optimizer, scheduler: optim.lr_scheduler._LRScheduler, num_epochs: int = 500, rollout_interval: int = 10, pr: int = 0, patience: int = 0, loss_threshold: float = 0) -> tuple:
+def train_reduced(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader, val_loader: DataLoader, val_rollout: DataLoader, state_composer: nn.Module, state_decomposer: nn.Module, criterion: nn.Module, optimizer: optim.Optimizer, scheduler: optim.lr_scheduler._LRScheduler, num_epochs: int = 500, rollout_interval: int = 10, pr: int = 0, patience: int = 0, loss_threshold: float = 0) -> tuple:
     """Generic training function for a GraphNeuralSimulator.
 
     Arguments:
         simulator (gns.GraphNeuralSimulator): A simulator to train.
-        train_loader (torch.DataLoader): An appropriate Pytorch DataLoader object. For any batch, which corresponds to a contiguous time series, batch.traj is a tensor of states of dimension (len_trajectory, num_particles, dim_state_reduced).
-        val_loader (torch.DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
-        val_rollout (torch.DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
+        train_loader (DataLoader): An appropriate Pytorch DataLoader object. For any batch, which corresponds to a contiguous time series, batch.traj is a tensor of states of dimension (len_trajectory, num_particles, dim_state_reduced).
+        val_loader (DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
+        val_rollout (DataLoader): An appropriate Pytorch DataLoader object, of the same structure as train_loader.
         state_composer (nn.Module): A function which converts a window of reduced states to a full state of dimension dim_state. Must have an attribute num_past (int) which holds the number of reduced states, besides the present, which are used to compose the full state.
         state_decomposer (nn.Module): A function which converts a batch of full states of dimension (num_particles, dim_state) to a single reduced state, of dimension (num_particles, dim_state_reduced).
         criterion (nn.Module): An appropriate loss function to minimize during training. This criterion should operate on states (state_reduced_pred, state_reduced_target), not the full state or the update (internal gnn.GraphNeuralNetwork output).
