@@ -65,7 +65,17 @@ def process_data(df: pd.DataFrame, min_chunk_length: int) -> torch.Tensor:
     # Create new data frame to hold which runners are visible at a given moment
     print('Splitting video into chunks')
     masks = df.pivot(index='frame', columns='track_id', values='mask')
-    runner_columns = [f'track_{i + 1}' for i in range(num_runners)]
+    # runner_columns = [f'track_{i + 1}' for i in range(num_runners)] # Flaw: track_* skips an index
+    runner_columns = [c for c in masks.columns if isinstance(c, str) and c.startswith('track_')]
+    def sort_key(x): # Custom sorting for track_* strings... compare the integer
+        try:
+            return int(x.split('_')[1])
+        except (IndexError, ValueError):
+            return 0
+    runner_columns.sort(key=sort_key)
+    num_runners_found = len(runner_columns)
+    if num_runners_found != num_runners: # Some sort of frame mismatch happened
+        raise ValueError(f'Expected {num_runners} runners, found {num_runners_found} runners. Runners may not have the same number of frames.')
     masks['current_state'] = masks[runner_columns].apply(tuple, axis=1)
     # Compute chunks in masks
     masks['state_changed'] = masks['current_state'] != masks['current_state'].shift(1)
