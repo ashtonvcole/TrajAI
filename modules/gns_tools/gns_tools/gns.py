@@ -74,8 +74,8 @@ def rollout_reduced(simulator: GraphNeuralSimulator, x_rollout: torch.Tensor, nu
         simulator (GraphNeuralSimulator): A Graph Neural Simulator, which acts as a state tranition function.
         x_rollout (torch.Tensor): A list of reduced particle states, of dimension (num_states, num_particles, dim_state_reduced). Note that num_state must be large enough for the state_composer.
         num_pred (int): The number of forward predictions to make.
-        state_composer (nn.Module): A function which converts a window of reduced states to a full state of dimension dim_state. Must have an attribute window (int) which holds the total number of reduced states are used to compose the full state.
-        state_decomposer (nn.Module): A function which converts a full state of dimension dim_state to a window of reduced states, of dimension (window, num_particles, dim_state_rediced).
+        state_composer (nn.Module): A function which converts a window of reduced states to a full state of dimension dim_state. Must have an attribute window (int) which holds the total number of reduced states which are used to compose the full state.
+        state_decomposer (nn.Module): A function which converts a full state of dimension dim_state to a window of reduced states, of dimension (window, num_particles, dim_state_reduced).
 
     Returns:
         torch.Tensor: The full time series of system states, of dimenion (num_states + num_pred, num_particles, dim_state_reduced).
