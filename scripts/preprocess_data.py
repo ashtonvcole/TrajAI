@@ -4,6 +4,10 @@
 # (Only use segments with all)
 # Compute v, a
 # Write states to npy files, organize appropriately
+# State should be in normalized local coordinate system
+
+# Tracklet to state function
+# Normalize velocity too
 
 import numpy as np
 

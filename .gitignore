@@ -5,6 +5,7 @@ __pycache__/
 *.log
 *.out
 *.synctex.gz
+*.egg-info
 *.MP4
 *.jpg
 *.png

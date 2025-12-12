@@ -1,0 +1,56 @@
+aiohappyeyeballs==2.6.1
+aiohttp==3.13.2
+aiosignal==1.4.0
+attrs==25.4.0
+certifi==2025.11.12
+charset-normalizer==3.4.4
+contourpy @ file:///Users/runner/miniforge3/conda-bld/contourpy_1762525529282/work
+cycler @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_cycler_1764466758/work
+filelock @ file:///home/conda/feedstock_root/build_artifacts/filelock_1759948064277/work
+fonttools @ file:///Users/runner/miniforge3/conda-bld/fonttools_1764352902967/work
+frozenlist==1.8.0
+fsspec @ file:///home/conda/feedstock_root/build_artifacts/fsspec_1764784748144/work
+gmpy2 @ file:///Users/runner/miniforge3/conda-bld/gmpy2_1762946962655/work
+-e git+ssh://git@github.com/ashtonvcole/TrajAI.git@2613e81f5284fe058b68ec720bf0b9c31bc4d604#egg=gns_tools&subdirectory=modules/gns_tools
+idna==3.11
+Jinja2 @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_jinja2_1764517220/work
+kiwisolver @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_kiwisolver_1762488945/work
+MarkupSafe @ file:///Users/runner/miniforge3/conda-bld/markupsafe_1759055271810/work
+matplotlib==3.10.8
+mpmath @ file:///home/conda/feedstock_root/build_artifacts/mpmath_1733302684489/work
+multidict==6.7.0
+munkres==1.1.4
+networkx @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_networkx_1765215107/work
+numpy @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_numpy_1763350918/work/dist/numpy-2.3.5-cp313-cp313-macosx_11_0_arm64.whl#sha256=ebdad01b9f7226947d22834ee5a8b6b1ca2a8b555cd4428223a4c433e8ca1e73
+optree @ file:///Users/runner/miniforge3/conda-bld/optree_1763124414499/work
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+pillow @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_pillow_1764330196/work
+propcache==0.4.1
+psutil==7.1.3
+pybind11 @ file:///D:/bld/pybind11-split_1747934313674/work
+pybind11_global @ file:///home/conda/feedstock_root/build_artifacts/pybind11-split_1747934270866/work
+pyg_lib==0.5.0+pt28
+pyparsing @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_pyparsing_1758436411/work
+python-dateutil @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_python-dateutil_1751104122/work
+requests==2.32.5
+scipy==1.16.3
+setuptools==80.9.0
+six @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_six_1753199211/work
+sympy @ file:///home/conda/feedstock_root/build_artifacts/sympy_1745946051654/work
+torch @ file:///Users/runner/miniforge3/conda-bld/libtorch_1762088909396/work
+torch-geometric==2.7.0
+torch_cluster==1.6.3
+torch_scatter==2.1.2
+torch_sparse==0.6.18
+torch_spline_conv==1.2.2
+torchaudio @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_torchaudio_1762047756/work
+torchcodec @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_torchcodec_1762039483/work
+torchvision @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_torchvision_1762096331/work
+torchvision-extra-decoders @ file:///Users/runner/miniforge3/conda-bld/bld/rattler-build_torchvision-extra-decoders_1759392800/work
+tornado @ file:///Users/runner/miniforge3/conda-bld/tornado_1762506897099/work
+tqdm==4.67.1
+-e git+ssh://git@github.com/ashtonvcole/TrajAI.git@2613e81f5284fe058b68ec720bf0b9c31bc4d604#egg=traj_ai&subdirectory=modules/traj_ai
+typing_extensions @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_typing_extensions_1756220668/work
+urllib3==2.6.1
+xxhash==3.6.0
+yarl==1.22.0
