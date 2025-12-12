@@ -7,6 +7,7 @@ from .losses import (
 )
 from .relaters import NormalTangentialDistanceObjectiveStateRelater
 from .transcoders import InvariantStateTranscoder
+from .transposers import StateComposer, StateDecomposer
 from .updaters import LocalVelocityUpdater, LocalAccelerationUpdater
 
 __all__ = [
@@ -14,6 +15,8 @@ __all__ = [
     'LocalVelocityUpdater',
     'LocalAccelerationUpdater',
     'NormalTangentialDistanceObjectiveStateRelater',
+    'StateComposer',
+    'StateDecomposer',
     'StateStateMeanSquarePositionLoss',
     'StateStateMeanSquareVelocityLoss',
     'StatePositionMeanSquarePositionLoss',
