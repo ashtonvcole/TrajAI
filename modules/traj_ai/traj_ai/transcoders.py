@@ -62,7 +62,7 @@ class NormalTangentialObjectiveStateTranscoder(nn.Module):
         ATT_LEN = x.shape[1] - ATT_START
         P_START = 0
         V_START = P_START + self.num_past * POS_DIM
-        A_START = V_START + self.num_past * VEL_DIM
+        A_START = V_START + 1 + self.num_past * VEL_DIM # Since keep v[n]
         XN_DIM = self.num_past * POS_DIM + 1 + self.num_past * VEL_DIM + ATT_LEN
         
         # Create new state

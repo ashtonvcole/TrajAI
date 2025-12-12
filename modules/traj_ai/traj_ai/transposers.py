@@ -52,7 +52,7 @@ class StateComposer(nn.Module):
         Returns:
             torch.Tensor: A tensor of full particle states, of dimension (num_time_step - num_past, ..., dim_state).
         """
-        shape = x.shape # Extract x's shape
+        shape = list(x.shape) # Extract x's shape
         num_time_step = shape[0]
         shape[0] -= self.num_past # Reduce time series along axis of composition
         shape[-1] += self.num_past * (self.POS_DIM + self.VEL_DIM) # Add slots for past positions and velocities
@@ -118,7 +118,7 @@ class StateDecomposer(nn.Module):
         Returns:
             torch.Tensor: A tensor of full particle states, of dimension (num_particles, dim_state_reduced).
         """
-        shape = x.shape # Extract x's shape
+        shape = list(x.shape) # Extract x's shape
         shape[-1] -= self.num_past * (self.POS_DIM + self.VEL_DIM) # Remove slots for past positions and velocities
         x_new = torch.zeros(shape, device=x.device) # New states
         x_new[:, self.POS_START_RED:(self.POS_START_RED + self.POS_DIM)] = x[:, self.POS_START:(self.POS_START + self.POS_DIM)] # Copy current position
