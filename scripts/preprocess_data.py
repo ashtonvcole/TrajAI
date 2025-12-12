@@ -1,8 +1,6 @@
 import pandas as pd
 from pathlib import Path
 import torch
-from torch.utils.data import Dataset, DataLoader
-from types import SimpleNamespace
 
 
 
@@ -124,49 +122,6 @@ def process_data(df: pd.DataFrame, min_chunk_length: int) -> torch.Tensor:
     # Filter zero velocities or split video
     # Cut chunks which
     return tensors
-
-
-
-class TrajectoryDataset(Dataset):
-    """
-    Batch data structure for GNS training.
-
-    Attributes:
-        chunks (list): A list of data.
-    """
-
-    def __init__(self, chunks: list) -> None:
-        """Constructor for trajectory dataset.
-
-        Arguments:
-            trajectories (torch.Tensor): A list of tensors, each of dimension (num_frames, num_particles, dim_state).
-
-        Returns:
-            None
-        """
-        self.chunks = chunks
-        
-    def __len__(self):
-        """Get length of the data set.
-
-        Arguments:
-            None
-
-        Returns:
-            int: The length of chunks.
-        """
-        return len(self.chunks)
-
-    def __getitem__(self, idx):
-        """Index the data set.
-
-        Arguments:
-            idx: A key provided in brackets.
-
-        Returns:
-            When traj is requested, the chunks.
-        """
-        return SimpleNamespace(traj=self.chunks[idx])
 
 
 

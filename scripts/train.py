@@ -1,10 +1,20 @@
 import gns_tools as gt
 import traj_ai as ta
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from types import SimpleNamespace
 
 def main():
     ####################################
     # Part 0: Specify Model parameters #
     ####################################
+
+    # File paths
+    PATH_CHUNKS = '../data/processed/data.pt'
+    PATH_STATS = '../data/processed/stats.pt'
+    PATH_MODEL = '../models/simulator.pt'
 
     # Misc
     dt = 2 / 29.97 # Every other frame of 30 FPS video is provided
@@ -15,15 +25,16 @@ def main():
     # See traj_ai module for state convention
     dim_pos = 2
     dim_vel = 2
-    len_attr = 0 # Additional attributes passed in
+    len_attr = 2 # Additional attributes passed in
 
     # Space dimensions
+    # dim_state_reduced = dim_pos + dim_vel + len_attr # Not used
     dim_state = (1 + num_past) * (dim_pos + dim_vel) + len_attr # Dimension of state space
     dim_state_objective = num_past * dim_pos + 1 + num_past * dim_vel + len_attr # Dimension of objective state space, reduced by 3 DOF, since you lose absolute position (2 DOF) and orientation (1 DOF)
     dim_relation = (1 + num_past) * (dim_pos + dim_vel + 1) # Dimension of (objective) relation space, composed of relative positions, relative velocities, and distances
     dim_update = 2 # Either learning local 2D velocity or acceleration
-    dim_node = 8 # Dimension of graph space
-    dim_edge = 8 # Dimension of edge weights in graph space
+    dim_node = 16 # Dimension of graph space
+    dim_edge = 16 # Dimension of edge weights in graph space
     
     # Node encoder MLP parameters
     width_encoder_node = 16
@@ -52,7 +63,7 @@ def main():
 
     # Define relater: state space to relation space
     # Expresses how a influencer particle relates to an influenced particle
-    relater = NormalTangentialDistanceObjectiveStateRelater(
+    relater = ta.NormalTangentialDistanceObjectiveStateRelater(
         num_past=num_past,
         epsilon=epsilon
     )
@@ -133,27 +144,142 @@ def main():
         connector=connector
     )
 
-    #######################
-    # Part 2: Train Model #
-    #######################
+    ########################
+    # Part 2: Load in data #
+    ########################
 
-    # Need to define some things here
+    # Read files
+    chunks = torch.load(PATH_CHUNKS)
+    stats = torch.load(PATH_STATS)
 
-    losses_train, losses_one_step, losses_rollout = gt.train(
-        simulator: gns.GraphNeuralSimulator,
-        train_loader: torch.DataLoader,
-        val_loader: torch.DataLoader,
-        val_rollout: torch.DataLoader,
-        criterion: nn.Module,
-        optimizer: optim.Optimizer,
-        scheduler: optim.lr_scheduler._LRScheduler,
-        num_epochs: int = 500,
-        rollout_interval: int = 10,
-        pr: int = 0,
-        patience: int = 0,
-        loss_threshold: float = 0
+    # Train/validation split
+    train_val_split = 0.8
+    split_index = int(len(chunks) * train_val_split)
+    chunks_train = chunks[:split_index]
+    chunks_val = chunks[split_index:]
+
+    # Build Datasets
+    train_dataset = TrajectoryDataset(chunks_train)
+    val_dataset = TrajectoryDataset(chunks_val)
+
+    # Build DataLoaders
+    train_loader = DataLoader(
+        train_dataset, 
+        batch_size=1, 
+        shuffle=True,
+        num_workers=0
+    )
+    val_loader = DataLoader(
+        val_dataset, 
+        batch_size=1, 
+        shuffle=False
+    )
+    val_rollout = DataLoader(
+        val_dataset, 
+        batch_size=1, 
+        shuffle=False
     )
 
-    ######################
-    # Part 3: Save Model #
-    ######################
+    #######################
+    # Part 3: Train Model #
+    #######################
+
+    # Define parameters for training function
+    state_composer = ta.StateComposer(num_past)
+    state_decomposer = ta.StateDecomposer(num_past)
+    criterion = CombinedLoss(0) # No past steps since train_reduced computes loss on reduced state vector of dimension dim_state_reduced
+    optimizer = optim.Adam(
+        simulator.parameters(),
+        lr=1e-3
+    )
+    scheduler = optim.lr_scheduler.ExponentialLR(
+        optimizer,
+        gamma=0.98
+    )
+    num_epochs = 100
+    rollout_interval = 10 # Compute rollout loss every n epochs
+    pr = 1 # Print every n epochs
+    patience = 50 # Stop after this many epochs of no improvement
+    loss_threshold=1e-6 # Stop after loss drops below this
+
+    losses_train, losses_one_step, losses_rollout = gt.train_reduced(
+        simulator=simulator,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        val_rollout=val_rollout,
+        state_composer=state_composer,
+        state_decomposer=state_decomposer,
+        criterion=criterion,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        num_epochs=num_epochs,
+        rollout_interval=rollout_interval,
+        pr=pr,
+        patience=patience,
+        loss_threshold=loss_threshold
+    )
+
+    #################################
+    # Part 4: Save Model and Losses #
+    #################################
+
+    torch.save(simulator.state_dict(), 'simulator.pth')
+
+
+
+class TrajectoryDataset(Dataset):
+    """
+    Batch data structure for GNS training.
+
+    Attributes:
+        chunks (list): A list of data.
+    """
+
+    def __init__(self, chunks: list) -> None:
+        """Constructor for trajectory dataset.
+
+        Arguments:
+            trajectories (torch.Tensor): A list of tensors, each of dimension (num_frames, num_particles, dim_state).
+
+        Returns:
+            None
+        """
+        self.chunks = chunks
+        
+    def __len__(self):
+        """Get length of the data set.
+
+        Arguments:
+            None
+
+        Returns:
+            int: The length of chunks.
+        """
+        return len(self.chunks)
+
+    def __getitem__(self, idx):
+        """Index the data set.
+
+        Arguments:
+            idx: A key provided in brackets.
+
+        Returns:
+            When traj is requested, the chunks.
+        """
+        return SimpleNamespace(traj=self.chunks[idx])
+
+
+
+class CombinedLoss(nn.Module):
+    def __init__(self, num_step: int) -> None:
+        super(CombinedLoss, self).__init__()
+        self.loss_pos = ta.StateStateMeanSquarePositionLoss(num_step)
+        self.loss_vel = ta.StateStateMeanSquareVelocityLoss(num_step)
+
+    def forward(self, x_pred: torch.Tensor, x_true: torch.Tensor) -> torch.Tensor:
+        return self.loss_pos(x_pred, x_true) + self.loss_vel(x_pred, x_true)
+
+
+
+if __name__ == '__main__':
+    main()
