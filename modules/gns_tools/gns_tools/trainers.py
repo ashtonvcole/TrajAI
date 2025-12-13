@@ -59,16 +59,19 @@ def train(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader, val_loa
                 pred[i, :, :] = simulator(global_state) # Prediction, of dimension (num_particles, dim_state)
 
             # Get loss based on criterion
-            loss_batch = criterion(pred, y)
+            loss_batch = criterion(
+                torch.flatten(pred, start_dim=0, end_dim=1), 
+                torch.flatten(y, start_dim=0, end_dim=1)
+            )
             loss_train += loss_batch.item()
             
             # Adjust weights to minimize loss
             optimizer.zero_grad()
             loss_batch.backward()
             optimizer.step()
-            scheduler.step()
         loss_train /= len(train_loader) # Normalize sum
         losses_train.append(loss_train) # Record
+        scheduler.step()
 
         # Set to evaluation mode
         simulator.eval()
@@ -88,7 +91,10 @@ def train(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader, val_loa
                 pred[i, :, :] = simulator(global_state) # Prediction, of dimension (num_particles, dim_state)
 
             # Get loss based on criterion
-            loss_one_step += criterion(pred, y).item()
+            loss_one_step += criterion(
+                torch.flatten(pred, start_dim=0, end_dim=1), 
+                torch.flatten(y, start_dim=0, end_dim=1)
+            ).item()
         loss_one_step /= len(val_loader) # Normalize sum
         losses_one_step.append(loss_one_step) # Record
         
@@ -104,7 +110,10 @@ def train(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader, val_loa
                 pred = gns.rollout(simulator, traj[0, :, :].unsqueeze(0), traj.shape[0] - 1) # Of dimension (num_frames, num_particles, dim_state)
     
                 # Get loss based on criterion
-                loss_rollout += criterion(pred, traj).item()
+                loss_rollout += criterion(
+                    torch.flatten(pred, start_dim=0, end_dim=1), 
+                    torch.flatten(traj, start_dim=0, end_dim=1)
+                ).item()
             loss_rollout /= len(val_rollout) # Normalize sum
             losses_rollout.append(loss_rollout) # Record
         
@@ -124,7 +133,8 @@ def train(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader, val_loa
         
         # Print progress if desired
         if pr != 0 and (epoch + 1) % pr == 0:
-            print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss_train:.6f}, Patience: {patience_counter}')
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss_train:.6f}, Patience: {patience_counter}, LR: {current_lr:.2e}')
 
     # Set to evaluation mode
     simulator.eval()
@@ -186,16 +196,19 @@ def train_reduced(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader,
                 pred[i, :, :] = state_decomposer(simulator(global_state)) # Prediction, of dimension (num_particles, dim_state_reduced)
 
             # Get loss based on criterion
-            loss_batch = criterion(pred, y) # Save for gradient descent
+            loss_batch = criterion(
+                torch.flatten(pred, start_dim=0, end_dim=1), 
+                torch.flatten(y, start_dim=0, end_dim=1)
+            ) # Save for gradient descent
             loss_train += loss_batch.item()
             
             # Adjust weights to minimize loss
             optimizer.zero_grad()
             loss_batch.backward()
             optimizer.step()
-            scheduler.step()
         loss_train /= len(train_loader) # Normalize sum
         losses_train.append(loss_train) # Record
+        scheduler.step()
 
         # Set to evaluation mode
         simulator.eval()
@@ -215,7 +228,10 @@ def train_reduced(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader,
                 pred[i, :, :] = state_decomposer(simulator(global_state)) # Prediction, of dimension (num_particles, dim_state_reduced)
 
             # Get loss based on criterion
-            loss_one_step += criterion(pred, y).item()
+            loss_one_step += criterion(
+                torch.flatten(pred, start_dim=0, end_dim=1), 
+                torch.flatten(y, start_dim=0, end_dim=1)
+            ).item()
         loss_one_step /= len(val_loader) # Normalize sum
         losses_one_step.append(loss_one_step) # Record
         
@@ -230,7 +246,10 @@ def train_reduced(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader,
                 pred = gns.rollout_reduced(simulator, traj[0:window, :, :], traj.shape[0] - window, state_composer, state_decomposer) # Of dimension (num_frames, num_particles, dim_state_reduced)
     
                 # Get loss based on criterion
-                loss_rollout += criterion(pred, traj).item()
+                loss_rollout += criterion(
+                    torch.flatten(pred, start_dim=0, end_dim=1), 
+                    torch.flatten(traj, start_dim=0, end_dim=1)
+                ).item()
             loss_rollout /= len(val_rollout) # Normalize sum
             losses_rollout.append(loss_rollout) # Record
         
@@ -250,7 +269,8 @@ def train_reduced(simulator: gns.GraphNeuralSimulator, train_loader: DataLoader,
         
         # Print progress if desired
         if pr != 0 and (epoch + 1) % pr == 0:
-            print(f'Epoch [{epoch + 1}/{epochs}], Loss: {loss_train:.6f}, Patience: {patience_counter}')
+            current_lr = optimizer.param_groups[0]['lr']
+            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss_train:.6f}, Patience: {patience_counter}, LR: {current_lr:.2e}')
 
     # Set to evaluation mode
     simulator.eval()

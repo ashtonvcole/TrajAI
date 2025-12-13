@@ -85,7 +85,7 @@ def rollout_reduced(simulator: GraphNeuralSimulator, x: torch.Tensor, num_pred: 
     x_series = x.clone() # Clone to preserve gradient calculations
     for i in range(num_pred):
         with torch.no_grad():
-            x_full = state_composer(x_series[-window:, :, :]) # Current global state, of dimension (num_particles, dim_state)
+            x_full = state_composer(x_series[-window:, :, :]).squeeze(0) # Current global state, of dimension (num_particles, dim_state)
             x_new_full = simulator(x_full) # Get new global state
             x_new_reduced = state_decomposer(x_new_full) # Extract most recent reduced state from full state
             x_series = torch.cat((x_series, x_new_reduced.unsqueeze(0)), dim=0) # Append to time series

@@ -39,6 +39,7 @@ def main():
     # Save list of tensors to file
     print('Saving to file')
     torch.save(chunks, '../data/processed/data.pt')
+    torch.save(normalized_chunks, '../data/processed/normalized_data.pt')
     torch.save(stats, '../data/processed/stats.pt')
 
     print('Complete')

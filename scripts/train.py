@@ -7,12 +7,16 @@ from torch.utils.data import Dataset, DataLoader
 from types import SimpleNamespace
 
 def main():
+    print('Starting train.py')
+    
     ####################################
     # Part 0: Specify Model parameters #
     ####################################
 
+    print('Specifying model parameters...')
+
     # File paths
-    PATH_CHUNKS = '../data/processed/data.pt'
+    PATH_CHUNKS = '../data/processed/normalized_data.pt'
     PATH_STATS = '../data/processed/stats.pt'
     PATH_MODEL = '../models/simulator.pt'
 
@@ -33,33 +37,35 @@ def main():
     dim_state_objective = num_past * dim_pos + 1 + num_past * dim_vel + len_attr # Dimension of objective state space, reduced by 3 DOF, since you lose absolute position (2 DOF) and orientation (1 DOF)
     dim_relation = (1 + num_past) * (dim_pos + dim_vel + 1) # Dimension of (objective) relation space, composed of relative positions, relative velocities, and distances
     dim_update = 2 # Either learning local 2D velocity or acceleration
-    dim_node = 16 # Dimension of graph space
-    dim_edge = 16 # Dimension of edge weights in graph space
+    dim_node = 32 # Dimension of graph space
+    dim_edge = 32 # Dimension of edge weights in graph space
     
     # Node encoder MLP parameters
-    width_encoder_node = 16
+    width_encoder_node = 32
     depth_encoder_node = 2
-    activation_type_encoder_node = nn.ReLU
+    activation_type_encoder_node = nn.LeakyReLU
     
     # Edge encoder MLP parameters
-    width_encoder_edge = 16
+    width_encoder_edge = 32
     depth_encoder_edge = 2
-    activation_type_encoder_edge = nn.ReLU
+    activation_type_encoder_edge = nn.LeakyReLU
     
     # Graph layer MLP parameters (within GraphNetwork processor)
-    num_layers_gn = 3 # n rounds of message passing
-    width_gn_layer_mlps = 16 # For both node and edge update MLPs
+    num_layers_gn = 5 # n rounds of message passing
+    width_gn_layer_mlps = 32 # For both node and edge update MLPs
     depth_gn_layer_mlps = 2 # For both node and edge update MLPs
-    activation_type_gn_layer_mlps = nn.ReLU # For both node and edge update MLPs
+    activation_type_gn_layer_mlps = nn.LeakyReLU # For both node and edge update MLPs
     
     # Decoder
-    width_decoder = 16
+    width_decoder = 32
     depth_decoder = 2
-    activation_type_decoder = nn.ReLU
+    activation_type_decoder = nn.LeakyReLU
 
     #######################
     # Part 1: Build Model #
     #######################
+    
+    print('Building GNS model...')
 
     # Define relater: state space to relation space
     # Expresses how a influencer particle relates to an influenced particle
@@ -147,6 +153,8 @@ def main():
     ########################
     # Part 2: Load in data #
     ########################
+    
+    print('Loading data...')
 
     # Read files
     chunks = torch.load(PATH_CHUNKS)
@@ -163,26 +171,33 @@ def main():
     val_dataset = TrajectoryDataset(chunks_val)
 
     # Build DataLoaders
+    def identity_collate(batch):
+        return batch[0]
     train_loader = DataLoader(
         train_dataset, 
         batch_size=1, 
         shuffle=True,
-        num_workers=0
+        num_workers=0,
+        collate_fn=identity_collate
     )
     val_loader = DataLoader(
         val_dataset, 
         batch_size=1, 
-        shuffle=False
+        shuffle=False,
+        collate_fn=identity_collate
     )
     val_rollout = DataLoader(
         val_dataset, 
         batch_size=1, 
-        shuffle=False
+        shuffle=False,
+        collate_fn=identity_collate
     )
 
     #######################
     # Part 3: Train Model #
     #######################
+
+    print('Training model...')
 
     # Define parameters for training function
     state_composer = ta.StateComposer(num_past)
@@ -223,7 +238,11 @@ def main():
     # Part 4: Save Model and Losses #
     #################################
 
+    print('Saving TrajAI model...')
+
     torch.save(simulator.state_dict(), 'simulator.pth')
+
+    print('Process complete!')
 
 
 
@@ -274,10 +293,10 @@ class CombinedLoss(nn.Module):
     def __init__(self, num_step: int) -> None:
         super(CombinedLoss, self).__init__()
         self.loss_pos = ta.StateStateMeanSquarePositionLoss(num_step)
-        self.loss_vel = ta.StateStateMeanSquareVelocityLoss(num_step)
+        self.loss_val = ta.StateStateMeanSquareVelocityLoss(num_step)
 
     def forward(self, x_pred: torch.Tensor, x_true: torch.Tensor) -> torch.Tensor:
-        return self.loss_pos(x_pred, x_true) + self.loss_vel(x_pred, x_true)
+        return self.loss_pos(x_pred, x_true) + self.loss_val(x_pred, x_true)
 
 
 

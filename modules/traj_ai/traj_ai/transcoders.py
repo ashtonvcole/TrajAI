@@ -71,7 +71,7 @@ class NormalTangentialObjectiveStateTranscoder(nn.Module):
         # Get present position and velocity
         pos_present = x[:, POS_START:(POS_START + POS_DIM)]
         vel_present = x[:, VEL_START:(VEL_START + VEL_DIM)]
-        x_new[:, V_START] = torch.norm(vel_present)
+        x_new[:, V_START] = torch.norm(vel_present, dim=1)
         
         for i in range(self.num_past):
             POS_PAST_START = POS_START + (i + 1) * POS_DIM
@@ -191,7 +191,7 @@ class PolarObjectiveStateTranscoder(nn.Module):
         # Get present position and velocity
         pos_present = x[:, POS_START:(POS_START + POS_DIM)]
         vel_present = x[:, VEL_START:(VEL_START + VEL_DIM)]
-        x_new[:, V_START] = torch.norm(vel_present)
+        x_new[:, V_START] = torch.norm(vel_present, dim=1)
         
         for i in range(self.num_past):
             POS_PAST_START = POS_START + (i + 1) * POS_DIM
