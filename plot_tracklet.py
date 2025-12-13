@@ -1,13 +1,11 @@
+# Plot specific tracklet from JSON data
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.ticker as ticker
 
-# ==========================================
-# 1. LOAD DATA
-# ==========================================
-# Option A: Load from a file (Uncomment the next 2 lines if using a file)
+# LOAD DATA
 with open("output_data/MAX_0084/12810003/data.json", "r") as f:
     data = json.load(f)
 
@@ -15,13 +13,9 @@ with open("output_data/MAX_0084/12810003/data.json", "r") as f:
 
 df = pd.DataFrame(data)
 
-# ==========================================
-# 2. PLOTTING
-# ==========================================
+# PLOTTING
 fig, axes = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
 
-# --- CONFIG: X-AXIS INTERVAL ---
-# Change this to 10, 50, or 100 depending on how long your track is
 FRAME_INTERVAL = 50
 
 # --- PLOT 1: VELOCITY ---

@@ -9,16 +9,12 @@ from ultralytics import YOLO
 from collections import defaultdict
 from tqdm import tqdm
 
-# ==========================================
-# CONFIGURATION
-# ==========================================
+# CONFIG
 INPUT_FOLDER = 'baha2'
 TARGET_CLASS_NAME = "Athlete"
 YOLO_MODEL_PATH = 'models/best_color2.pt'
 OUTPUT_DIR = "output_data"
-
-# Performance & Physics
-SHOW_PREVIEW = False         # Set to True to see the window
+SHOW_PREVIEW = False        
 FRAME_STRIDE = 2              
 STABILIZATION_SCALE = 0.5     
 WORKER_THREADS = 4
@@ -33,14 +29,10 @@ PADDING_PERCENT = 0.15
 VELOCITY_WINDOW = 15          
 MIN_SPEED_THRESHOLD = 50.0    
 
-# ==========================================
 # TRACKER CONFIG
-# ==========================================
 TRACKER_CONFIG_PATH = "models/custom_botsort.yaml"
 
-# ==========================================
 # UTILITY CLASSES
-# ==========================================
 class ImageSaver:
     def __init__(self):
         self.q = queue.Queue()
@@ -106,9 +98,7 @@ class Stabilizer:
         self.prev_des = des_curr
         return self.H_cumulative
 
-# ==========================================
 # PROCESSING FUNCTIONS
-# ==========================================
 def get_padded_crop(frame, box, padding_percent=0.15):
     x1, y1, x2, y2 = map(int, box)
     h_img, w_img = frame.shape[:2]
@@ -146,7 +136,7 @@ def split_tracks_on_glitches(raw_tracks):
             # Glitch Checks
             if p['bh'] < (median_h * 0.70): is_glitch = True
             elif p['bh'] > (median_h * 1.3): is_glitch = True
-            elif p['conf'] < 0.15: is_glitch = True
+            elif p['c   onf'] < 0.15: is_glitch = True
             
             if is_glitch:
                 if len(current_segment) > 5:
@@ -250,9 +240,6 @@ def normalize_tracks_dynamic(clean_tracks, total_frames, reference_height_m=1.75
         
     return normalized_tracks
 
-# ==========================================
-# MAIN LOOP
-# ==========================================
 def process_single_video(video_path, model, target_id):
     video_name = os.path.splitext(os.path.basename(video_path))[0]
     video_out_dir = os.path.join(OUTPUT_DIR, video_name)
@@ -311,21 +298,13 @@ def process_single_video(video_path, model, target_id):
                 mx2, my2 = min(width, int(x2+pad)), min(height, int(y2+pad))
                 cv2.rectangle(stab_mask, (mx1, my1), (mx2, my2), 0, -1)
 
-        # === ADDED: PREVIEW LOGIC ===
         if SHOW_PREVIEW:
-            # Copy frame so we don't draw on the one used for tracking/stabilization
             annotated_frame = frame.copy()
-            
-            # Draw boxes
             for (tid, x1, y1, x2, y2, conf) in current_data:
-                # Box
                 cv2.rectangle(annotated_frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 2)
-                # Text
                 label = f"ID:{tid} {conf:.2f}"
                 cv2.putText(annotated_frame, label, (int(x1), int(y1) - 10), 
                             cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-            # Resize if the image is massive (e.g., 4k) to fit on screen
             ph, pw = annotated_frame.shape[:2]
             if pw > 1920:
                 scale_view = 1920 / pw
@@ -335,7 +314,6 @@ def process_single_video(video_path, model, target_id):
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 print("\n[STOP] User pressed 'q'. Exiting...")
                 break
-        # ============================
 
         H_cumulative = stab.update(frame_gray, stab_mask)
 
@@ -380,15 +358,14 @@ def process_single_video(video_path, model, target_id):
 
     pbar.close()
     
-    # === ADDED: CLEANUP ===
+    # CLEANUP 
     cv2.destroyAllWindows()
-    # ======================
 
     print("Waiting for image saver...")
     saver.stop()
     cap.release()
     
-    # --- POST PROCESSING ---
+    # POST PROCESSING 
     print("1. Splitting tracks on glitches (Anti-Mixup)...")
     split_tracks, parent_map = split_tracks_on_glitches(raw_tracks)
     print(f"   - Tracks: {len(raw_tracks)} -> {len(split_tracks)}")

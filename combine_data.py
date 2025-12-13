@@ -1,3 +1,5 @@
+# This file combines tracklets onto one dense trajectory, it also combines all the data from the athletes for a given video into 1 csv
+
 import os
 import json
 import pandas as pd
