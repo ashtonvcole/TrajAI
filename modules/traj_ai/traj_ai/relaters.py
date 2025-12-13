@@ -42,7 +42,7 @@ class NormalTangentialDistanceObjectiveStateRelater(nn.Module):
 
         Returns:
         """
-        super(NormalTangentialObjectiveStateRelater, self).__init__()
+        super(NormalTangentialDistanceObjectiveStateRelater, self).__init__()
         self.num_past = num_past
         self.epsilon = epsilon # To handle zero velocity/displacement, note that this is much smaller than a pixel
 
@@ -72,7 +72,7 @@ class NormalTangentialDistanceObjectiveStateRelater(nn.Module):
         r = torch.zeros((x_i.shape[0], R_DIM), device=x_i.device)
 
         dx = x_j[:, POS_START:VEL_START] - x_i[:, POS_START:VEL_START] # Displacement at num_past + 1 steps
-        dv = x_j[:, VEL_START:ATTR_START] - x_i[:, VEL_START:ATTR_START] # Velocity at num_past + 1 steps
+        dv = x_j[:, VEL_START:ATT_START] - x_i[:, VEL_START:ATT_START] # Velocity at num_past + 1 steps
         e1 = torch.tensor([1.0, 0.0], dtype=x_j.dtype, device=x_j.device).repeat(x_j.shape[0], 1) # Global frame reference vector
 
         # Iteratively reframe displacements, velocities, and distances

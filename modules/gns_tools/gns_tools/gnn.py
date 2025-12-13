@@ -1,4 +1,4 @@
-import .mlp
+from . import mlp
 import torch
 import torch.nn as nn
 import torch_geometric as pyg
@@ -95,14 +95,14 @@ class GraphNetwork(nn.Module):
         for i in range(num_layers):
             self.layers.append(GraphLayer(dim_node, dim_edge, mlp_width, mlp_depth, mlp_activation))
 
-    def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
+    def forward(self, graph: pyg_data.Data) -> pyg_data.Data:
         """Apply the Graph Network to a graph.
 
         Arguments:
-            graph (torch_geometric.data.Data): The initial graph, with nodes, edges, and connectivity.
+            graph (pyg_data.Data): The initial graph, with nodes, edges, and connectivity.
 
         Returns:
-            torch_geometric.data.Data: The updated graph object.
+            pyg_data.Data: The updated graph object.
         """
         for layer in self.layers:
             graph = layer(graph)
@@ -125,16 +125,19 @@ class GraphLayer(pyg.nn.MessagePassing):
         Returns:
             None
         """
-        super(GraphLayer, self).__init__()
-        self.node_dim = 0 # Expect 2D tensor, as list of node vectors
-        self.edge_updater = mlp.RectNN(
+        super(GraphLayer, self).__init__(
+            aggr="add",
+            flow="target_to_source", # Edge from node i to node j
+            node_dim=0 # Expect 2D tensor, as list of node vectors
+        )
+        self.edge_updater_mlp = mlp.RectNN(
             2 * dim_node + dim_edge,
             dim_edge,
             mlp_width,
             mlp_depth,
             mlp_activation
         )
-        self.node_updater = mlp.RectNN(
+        self.node_updater_mlp = mlp.RectNN(
             dim_node + dim_edge,
             dim_node,
             mlp_width, 
@@ -142,57 +145,65 @@ class GraphLayer(pyg.nn.MessagePassing):
             mlp_activation
         )
 
-    def message(self, node_a: torch.Tensor, node_b: torch.Tensor, edge_ab: torch.Tensor) -> torch.Tensor:
-        """Get a message associated with an edge.
+    def message(self, msg_tensor: torch.Tensor) -> torch.Tensor:
+        """Get a message associated with an edge by applying the edge updater MLP.
 
         Arguments:
-            node_a (torch.Tensor): The first node associated with the directed edge. This may be either a single input of dimension (dim_node), or a batch of dimension (n, dim_node).
-            node_b (torch.Tensor): The second node associated with the directed edge. This may be either a single input of dimension (dim_node), or a batch of dimension (n, dim_node).
-            edge_ab (torch.Tensor): The directed edge. This may be either a single input of dimension (dim_edge), or a batch of dimension (n, dim_edge).
+            msg_tensor (torch.Tensor): The precomputed messages.
 
         Returns:
             torch.Tensor: The message, either of dimension (edge_dim) or (n, edge_dim).
         """
-        return self.edge_updater(torch.cat((node_a, node_b, edge_ab), dim=-1))
+        return msg_tensor
 
-    def aggregate(self, messages: torch.Tensor, indices: torch.Tensor) -> tuple:
+    def aggregate(self, messages: torch.Tensor, index: torch.Tensor, dim_size: int = None) -> tuple:
         """Aggregate edge updates associated with a node.
 
         Arguments:
             messages (torch.Tensor): The output tensor from message(). This is the collection of all messages, of dimension (num_edges, dim_edge).
-            indices (torch.Tensor): The receiver nodes for each message, of dimension (num_edges). This can be derived from connectivity[1, :].
+            index (torch.Tensor): The receiver nodes for each message, of dimension (num_edges). This can be derived from connectivity[1, :].
+            dim_size (int, optional): ???
 
         Returns:
-            (messages, net_messages) (tuple)
-            messages (torch.Tensor): The same messages passed in to the function.
             net_messages (torch.Tensor): The aggregated messages per node, of dimension (num_nodes, dim_edge).
         """
         # Scatter aggregates all of the messages and directs them to the correct node
         # These sums are placed in the net_messages tensor of length num_nodes
         # The receiver node index in index corresponds to the index in net_messages where the message is summed
-        net_messages = torch_scatter.scatter(messages, indices, dim=self.node_dim, reduce="sum")
-        return (messages, net_messages)
+        return torch_scatter.scatter(messages, index, dim=self.node_dim, reduce="sum", dim_size=dim_size)
 
-    def forward(self, graph: torch_geometric.data.Data) -> torch_geometric.data.Data:
+    def update(self, aggr_out: torch.Tensor, x: torch.Tensor, msg_tensor: torch.Tensor) -> torch.Tensor:
+        """Get the node update by applying the node updater MLP.
+
+        Arguments:
+            aggr_out (torch.Tensor): Message outputs from aggregate(), of dimension (num_nodes, dim_edge).
+            x (torch.Tensor): Nodes, of dimension (num_nodes, dim_node).
+            msg_tensor (torch.Tensor): Edges updates, of dimension (num_edges, dim_edge).
+
+        Returns:
+            torch.Tensor: The node update, either of dimension (node_dim) or (n, node_dim)
+        """
+        return self.node_updater_mlp(torch.cat((x, aggr_out), dim=-1))
+
+    def forward(self, graph: pyg_data.Data) -> pyg_data.Data:
         """Apply the graph layer to a graph.
 
         Given a graph, represented by nodes, edge weights, and a connectivity mapping, the layer produces new nodes and edge weights through a process called message passing. Messages are created by feeding an edge's weights and its associated nodes into a MLP. This message is added to the existing edge weights. Nodes are updated by aggregating messages directed at a node, and feeding them and the node through a second MLP.
 
         Arguments:
-            graph (torch_geometric.data.Data): The initial graph, with nodes, edges, and connectivity.
+            graph (pyg_data.Data): The initial graph, with nodes, edges, and connectivity.
 
         Returns:
-            torch_geometric.data.Data: The updated graph object.
+            pyg_data.Data: The updated graph object.
         """
-        # Extract nodes, edges, and connectivity for operations
-        nodes = graph.x
-        edges = graph.edge_attr
-        connectivity = graph.edge_index
-        # Propagate calls message, aggregate, and update
-        # delta_edge is the corresponding message.
-        delta_edges, net_messages = self.propagate(connectivity, x=(nodes, nodes), edge_feature=edges)
-        delta_nodes = self.node_updater(torch.cat((nodes, net_messages), dim=-1))
-        # Update the same graph object
-        graph.x = nodes + delta_nodes
-        graph.edge_attr = edges + delta_edges
+        i, j = graph.edge_index
+        delta_edges = self.edge_updater_mlp(torch.cat([graph.x[i], graph.x[j], graph.edge_attr], dim=-1))
+        delta_nodes = self.propagate(
+            graph.edge_index,
+            x=graph.x,
+            msg_tensor=delta_edges,
+            dim_size=graph.x.size(0)
+        )
+        graph.x = graph.x + delta_nodes
+        graph.edge_attr = graph.edge_attr + delta_edges
         return graph
